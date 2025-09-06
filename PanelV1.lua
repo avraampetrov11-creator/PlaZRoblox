@@ -1,184 +1,352 @@
--- LocalScript (StarterPlayerScripts)
+-- LocalScript for Roblox UI Panel
+-- Place this in StarterPlayerScripts or similar
 
---// Setup
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.Name = "PlaZPanel"
+gui.ResetOnSpawn = false  -- Prevent reset on respawn
 
--- Constants
-local NORMAL_SPEED = 16
-local FAST_SPEED = 40
+-- Main Frame (Panel) with rounded corners
+local mainFrame = Instance.new("Frame")
+mainFrame.Parent = gui
+mainFrame.Size = UDim2.new(0.5, 0, 0.7, 0)  -- Big screen: 50% width, 70% height
+mainFrame.Position = UDim2.new(0.25, 0, 0.15, 0)  -- Centered
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Dark background
+mainFrame.BorderSizePixel = 0
 
--- States
-local flying = false
-local speedOn = false
-local infJumpOn = false
-local noclipOn = false
+-- Rounded corners for smooth design
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 20)  -- Smooth round edges
+uiCorner.Parent = mainFrame
 
-local bodyVel, bodyGyro, flyConnection, noclipConnection
+-- Title Label "PlaZ" at the top
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Parent = mainFrame
+titleLabel.Size = UDim2.new(1, 0, 0.1, 0)  -- 10% height of frame
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "PlaZ"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 40
+titleLabel.Font = Enum.Font.GothamBold
+titleLabel.TextStrokeTransparency = 0.8  -- Slight stroke for visibility
 
---// UI
-local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "PlaZ_GUI"
-screenGui.ResetOnSpawn = false
-screenGui.Parent = playerGui
+-- ScrollingFrame for buttons to make it "long" with many features
+local scrollingFrame = Instance.new("ScrollingFrame")
+scrollingFrame.Parent = mainFrame
+scrollingFrame.Size = UDim2.new(1, 0, 0.9, 0)
+scrollingFrame.Position = UDim2.new(0, 0, 0.1, 0)
+scrollingFrame.BackgroundTransparency = 1
+scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 2, 0)  -- Make it long vertically
 
-local panel = Instance.new("Frame")
-panel.Size = UDim2.new(0, 230, 0, 280)
-panel.Position = UDim2.new(0.03, 0, 0.2, 0)
-panel.BackgroundColor3 = Color3.fromRGB(28, 28, 30)
-panel.Parent = screenGui
+-- UIListLayout for organizing buttons vertically
+local uiListLayout = Instance.new("UIListLayout")
+uiListLayout.Parent = scrollingFrame
+uiListLayout.Padding = UDim.new(0, 10)
+uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
-Instance.new("UICorner", panel).CornerRadius = UDim.new(0, 14)
-Instance.new("UIStroke", panel).Transparency = 0.7
-
-local title = Instance.new("TextLabel", panel)
-title.Size = UDim2.new(1, 0, 0, 36)
-title.Position = UDim2.new(0, 0, 0, 6)
-title.BackgroundTransparency = 1
-title.Text = "PlaZ"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextColor3 = Color3.fromRGB(255, 255, 255)
-
-local function makeButton(text, yPos)
-	local btn = Instance.new("TextButton", panel)
-	btn.Size = UDim2.new(0.85, 0, 0, 40)
-	btn.Position = UDim2.new(0.075, 0, yPos, 0)
-	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 48)
-	btn.Font = Enum.Font.GothamSemibold
-	btn.TextSize = 18
-	btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-	btn.Text = text
-	btn.AutoButtonColor = true
-	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 10)
-	return btn
+-- Function to create a button
+local function createButton(name, callback)
+    local button = Instance.new("TextButton")
+    button.Parent = scrollingFrame
+    button.Size = UDim2.new(0.8, 0, 0, 50)  -- Wide buttons
+    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Text = name
+    button.TextColor3 = Color3.fromRGB(255, 255, 255)
+    button.TextSize = 24
+    button.Font = Enum.Font.Gotham
+    button.BorderSizePixel = 0
+    
+    local buttonCorner = Instance.new("UICorner")
+    buttonCorner.CornerRadius = UDim.new(0, 10)
+    buttonCorner.Parent = button
+    
+    button.MouseButton1Click:Connect(callback)
+    return button
 end
 
--- Buttons
-local flyBtn = makeButton("Fly", 0.18)
-local speedBtn = makeButton("Fast Speed", 0.36)
-local infJumpBtn = makeButton("Infinite Jump", 0.54)
-local noclipBtn = makeButton("Noclip", 0.72)
-local resetBtn = makeButton("Reset Character", 0.9)
+-- Services
+local UIS = game:GetService("UserInputService")
 
---// Helpers
-local function getHumanoid()
-	local char = player.Character or player.CharacterAdded:Wait()
-	return char:WaitForChild("Humanoid")
+-- Make panel draggable (works for mouse and touch)
+local dragging = false
+local dragInput
+local dragStart
+local startPos
+
+local function updateInput(input)
+    local delta = input.Position - dragStart
+    mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
 
--- Fly
-local function toggleFly()
-	flying = not flying
-	local char = player.Character
-	if not char then return end
-	local root = char:FindFirstChild("HumanoidRootPart")
-	if not root then return end
-
-	if flying then
-		bodyVel = Instance.new("BodyVelocity")
-		bodyVel.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-		bodyVel.Parent = root
-
-		bodyGyro = Instance.new("BodyGyro")
-		bodyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-		bodyGyro.CFrame = root.CFrame
-		bodyGyro.Parent = root
-
-		flyConnection = RunService.Heartbeat:Connect(function()
-			if not flying then return end
-			local cam = workspace.CurrentCamera
-			local move = Vector3.new(0, 0, 0)
-			local hum = char:FindFirstChildOfClass("Humanoid")
-			if hum then move = hum.MoveDirection end
-			local forwardVel = (cam.CFrame.LookVector) * (move.Magnitude > 0 and 50 or 0)
-			local upVel = Vector3.new(0, 28, 0)
-			bodyVel.Velocity = forwardVel + upVel
-			bodyGyro.CFrame = cam.CFrame
-		end)
-
-		flyBtn.Text = "Stop Fly"
-	else
-		if flyConnection then flyConnection:Disconnect() end
-		if bodyVel then bodyVel:Destroy() end
-		if bodyGyro then bodyGyro:Destroy() end
-		flyBtn.Text = "Fly"
-	end
-end
-
--- Speed
-local function toggleSpeed()
-	speedOn = not speedOn
-	local hum = getHumanoid()
-	if speedOn then
-		hum.WalkSpeed = FAST_SPEED
-		speedBtn.Text = "Normal Speed"
-	else
-		hum.WalkSpeed = NORMAL_SPEED
-		speedBtn.Text = "Fast Speed"
-	end
-end
-
--- Infinite Jump
-local function toggleInfJump()
-	infJumpOn = not infJumpOn
-	if infJumpOn then
-		infJumpBtn.Text = "Stop Inf Jump"
-		player:GetMouse().KeyDown:Connect(function(key)
-			if key == Enum.KeyCode.Space.Name:lower() and infJumpOn then
-				local hum = getHumanoid()
-				if hum and hum.Parent:FindFirstChild("HumanoidRootPart") then
-					hum:ChangeState(Enum.HumanoidStateType.Jumping)
-				end
-			end
-		end)
-	else
-		infJumpBtn.Text = "Infinite Jump"
-	end
-end
-
--- Noclip
-local function toggleNoclip()
-	noclipOn = not noclipOn
-	local char = player.Character
-	if not char then return end
-
-	if noclipOn then
-		noclipConnection = RunService.Stepped:Connect(function()
-			for _, part in pairs(char:GetDescendants()) do
-				if part:IsA("BasePart") and part.CanCollide then
-					part.CanCollide = false
-				end
-			end
-		end)
-		noclipBtn.Text = "Stop Noclip"
-	else
-		if noclipConnection then noclipConnection:Disconnect() end
-		noclipBtn.Text = "Noclip"
-	end
-end
-
--- Reset
-local function resetChar()
-	if player.Character then
-		player.Character:BreakJoints()
-	end
-end
-
---// Connect buttons
-flyBtn.MouseButton1Click:Connect(toggleFly)
-speedBtn.MouseButton1Click:Connect(toggleSpeed)
-infJumpBtn.MouseButton1Click:Connect(toggleInfJump)
-noclipBtn.MouseButton1Click:Connect(toggleNoclip)
-resetBtn.MouseButton1Click:Connect(resetChar)
-
--- Reset speed when respawning
-player.CharacterAdded:Connect(function(char)
-	local hum = char:WaitForChild("Humanoid")
-	hum.WalkSpeed = NORMAL_SPEED
-	if flying then flying = false flyBtn.Text = "Fly" end
-	if noclipOn then noclipOn = false noclipBtn.Text = "Noclip" end
+mainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = mainFrame.Position
+        
+        local connection
+        connection = input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
+                connection:Disconnect()
+            end
+        end)
+    end
 end)
 
+mainFrame.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then
+        updateInput(input)
+    end
+end)
+
+-- Fly Button
+createButton("Fly", function()
+    -- Simple fly script with mobile support
+    local flying = false
+    local speed = 50
+    local bodyGyro = Instance.new("BodyGyro")
+    local bodyVelocity = Instance.new("BodyVelocity")
+    local controlsGui
+    local moveDirections = {}
+    
+    if flying then
+        flying = false
+        bodyGyro:Destroy()
+        bodyVelocity:Destroy()
+        if controlsGui then controlsGui:Destroy() end
+    else
+        flying = true
+        bodyGyro.Parent = player.Character:WaitForChild("HumanoidRootPart")
+        bodyGyro.CFrame = player.Character.HumanoidRootPart.CFrame
+        bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+        
+        bodyVelocity.Parent = player.Character.HumanoidRootPart
+        bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+        bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+        
+        -- Mobile controls if touch enabled
+        if UIS.TouchEnabled then
+            controlsGui = Instance.new("ScreenGui")
+            controlsGui.Parent = player.PlayerGui
+            controlsGui.Name = "FlyControls"
+            
+            local directionVectors = {
+                Forward = Vector3.new(0, 0, -1),
+                Backward = Vector3.new(0, 0, 1),
+                Left = Vector3.new(-1, 0, 0),
+                Right = Vector3.new(1, 0, 0),
+                Up = Vector3.new(0, 1, 0),
+                Down = Vector3.new(0, -1, 0)
+            }
+            
+            -- Create buttons with positions (simple layout)
+            local function createControlButton(name, pos)
+                local btn = Instance.new("TextButton")
+                btn.Size = UDim2.new(0, 80, 0, 80)
+                btn.Position = pos
+                btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+                btn.Text = name
+                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+                btn.TextSize = 20
+                btn.Parent = controlsGui
+                
+                local btnCorner = Instance.new("UICorner")
+                btnCorner.CornerRadius = UDim.new(0, 40)  -- Round buttons
+                btnCorner.Parent = btn
+                
+                btn.MouseButton1Down:Connect(function()
+                    moveDirections[name] = true
+                end)
+                btn.MouseButton1Up:Connect(function()
+                    moveDirections[name] = nil
+                end)
+                btn.TouchLongPress:Connect(function()  -- For better mobile hold
+                    moveDirections[name] = true
+                end)
+                btn.MouseLeave:Connect(function()
+                    moveDirections[name] = nil
+                end)
+            end
+            
+            -- Positions: Left bottom for movement cross, right for up/down
+            createControlButton("Forward", UDim2.new(0.1, 0, 0.8, 0))
+            createControlButton("Backward", UDim2.new(0.1, 0, 0.95, 0))
+            createControlButton("Left", UDim2.new(0.05, 0, 0.875, 0))
+            createControlButton("Right", UDim2.new(0.15, 0, 0.875, 0))
+            createControlButton("Up", UDim2.new(0.85, 0, 0.8, 0))
+            createControlButton("Down", UDim2.new(0.85, 0, 0.9, 0))
+        end
+        
+        spawn(function()
+            while flying do
+                local move = Vector3.new(0, 0, 0)
+                
+                -- Keyboard inputs
+                if UIS:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(0, 0, -speed) end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then move = move + Vector3.new(0, 0, speed) end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then move = move + Vector3.new(-speed, 0, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(speed, 0, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, speed, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move = move + Vector3.new(0, -speed, 0) end
+                
+                -- Mobile button inputs
+                for dir, active in pairs(moveDirections) do
+                    if active then
+                        if dir == "Forward" then move = move + Vector3.new(0, 0, -speed) end
+                        if dir == "Backward" then move = move + Vector3.new(0, 0, speed) end
+                        if dir == "Left" then move = move + Vector3.new(-speed, 0, 0) end
+                        if dir == "Right" then move = move + Vector3.new(speed, 0, 0) end
+                        if dir == "Up" then move = move + Vector3.new(0, speed, 0) end
+                        if dir == "Down" then move = move + Vector3.new(0, -speed, 0) end
+                    end
+                end
+                
+                local hrp = player.Character.HumanoidRootPart
+                bodyVelocity.Velocity = (hrp.CFrame.LookVector * move.Z + hrp.CFrame.RightVector * move.X + hrp.CFrame.UpVector * move.Y)
+                bodyGyro.CFrame = workspace.CurrentCamera.CFrame
+                wait()
+            end
+            if controlsGui then controlsGui:Destroy() end
+        end)
+    end
+end)
+
+-- Fast Speed Button
+createButton("Fast Speed", function()
+    -- Toggle super speed
+    local speedEnabled = false
+    if speedEnabled then
+        speedEnabled = false
+        player.Character.Humanoid.WalkSpeed = 16  -- Default
+    else
+        speedEnabled = true
+        player.Character.Humanoid.WalkSpeed = 100  -- Fast speed
+    end
+end)
+
+-- More buttons for "and more" - making it long
+createButton("Infinite Jump", function()
+    -- Infinite jump toggle
+    local infJump = false
+    if infJump then
+        infJump = false
+    else
+        infJump = true
+        UIS.JumpRequest:Connect(function()
+            if infJump then
+                player.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end)
+    end
+end)
+
+createButton("Noclip", function()
+    -- Noclip toggle
+    local noclip = false
+    if noclip then
+        noclip = false
+    else
+        noclip = true
+        spawn(function()
+            while noclip do
+                for _, part in pairs(player.Character:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+                wait(0.1)
+            end
+        end)
+    end
+end)
+
+createButton("Teleport to Spawn", function()
+    -- Teleport to spawn location
+    local spawnLocation = workspace:FindFirstChildOfClass("SpawnLocation")
+    if spawnLocation then
+        player.Character.HumanoidRootPart.CFrame = spawnLocation.CFrame + Vector3.new(0, 5, 0)
+    end
+end)
+
+createButton("God Mode", function()
+    -- Simple god mode (infinite health)
+    player.Character.Humanoid.MaxHealth = math.huge
+    player.Character.Humanoid.Health = math.huge
+end)
+
+createButton("Invisible", function()
+    -- Make character invisible
+    for _, part in pairs(player.Character:GetChildren()) do
+        if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+            part.Transparency = 1
+        end
+    end
+end)
+
+createButton("Reset Character", function()
+    player.Character:BreakJoints()  -- Reset
+end)
+
+createButton("High Jump", function()
+    player.Character.Humanoid.JumpPower = 100
+end)
+
+createButton("Low Gravity", function()
+    workspace.Gravity = 50  -- Lower gravity
+end)
+
+createButton("Reset Gravity", function()
+    workspace.Gravity = 196.2  -- Default
+end)
+
+createButton("ESP (Highlight Players)", function()
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local highlight = Instance.new("Highlight")
+            highlight.Parent = p.Character
+            highlight.FillColor = Color3.fromRGB(255, 0, 0)
+        end
+    end
+end)
+
+createButton("Remove ESP", function()
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p.Character then
+            local highlight = p.Character:FindFirstChildOfClass("Highlight")
+            if highlight then highlight:Destroy() end
+        end
+    end
+end)
+
+-- Adjust CanvasSize based on number of buttons
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 20)
+
+-- Close Button at top right
+local closeButton = Instance.new("TextButton")
+closeButton.Parent = mainFrame
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -40, 0, 10)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 20
+closeButton.BorderSizePixel = 0
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 5)
+closeCorner.Parent = closeButton
+
+closeButton.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
