@@ -15,8 +15,8 @@ local SMOOTH = 0.15          -- smoothing factor (0..1)
 
 -- State
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:WaitForChild("Humanoid")
-local rootPart
+local humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
+local rootPart = character:FindFirstChild("HumanoidRootPart")
 local flying = false
 local bv, bg
 local isSpeedEnabled = false
@@ -33,7 +33,7 @@ screenGui.Parent = playerGui
 -- Main Panel Frame
 local mainPanel = Instance.new("Frame")
 mainPanel.Name = "MainPanel"
-mainPanel.Size = UDim2.new(0, 140, 0, 180)  -- Compact size
+mainPanel.Size = UDim2.new(0, 140, 0, 180)  -- Compact size (will be adjusted)
 mainPanel.Position = UDim2.new(0.05, 0, 0.78, 0)
 mainPanel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Plain dark gray
 mainPanel.BorderSizePixel = 0
@@ -55,7 +55,7 @@ panelGradient.Parent = mainPanel
 -- Title "PlaZ" at top
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Name = "Title"
-titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Size = UDim2.new(1, 0, 0, 40)
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "PlaZ"
@@ -66,12 +66,13 @@ titleLabel.Parent = mainPanel
 
 -- UIListLayout for buttons in panel
 local uiListLayout = Instance.new("UIListLayout")
-uiListLayout.Padding = UDim.new(0, 5)
+uiListLayout.Padding = UDim.new(0, 8)
 uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 uiListLayout.Parent = mainPanel
 
 -- Function to create better buttons
+-- callback receives the button instance as the first argument to avoid closure timing issues
 local function createToggleButton(name, initialText, callback)
     local button = Instance.new("TextButton")
     button.Name = name
@@ -94,33 +95,50 @@ local function createToggleButton(name, initialText, callback)
         button.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     end)
     button.MouseLeave:Connect(function()
+        -- preserve green when enabled
+        if (button.Name == "SpeedToggle" and isSpeedEnabled) or (button.Name == "HighlightToggle" and isHighlighted) or (button.Name == "FlyToggle" and flying) then
+            -- keep current enabled color
+            return
+        end
         button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     end)
 
-    button.MouseButton1Click:Connect(callback)
+    button.MouseButton1Click:Connect(function()
+        callback(button)
+    end)
     return button
 end
 
+-- Forward declarations for buttons so refreshCharacter can update them
+local flyToggleButton, speedToggleButton, highlightToggleButton
+
 -- Toggle Fly button
-local flyToggleButton = createToggleButton("FlyToggle", "Fly: OFF", function()
-    if flying then stopFly() else startFly() end
+flyToggleButton = createToggleButton("FlyToggle", "Fly: OFF", function(btn)
+    if flying then
+        -- stop
+        if typeof(stopFly) == "function" then stopFly() end
+    else
+        if typeof(startFly) == "function" then startFly() end
+    end
+    -- btn update happens inside startFly/stopFly
 end)
 
 -- Toggle Speed button
-local speedToggleButton = createToggleButton("SpeedToggle", "Speed: OFF", function()
+speedToggleButton = createToggleButton("SpeedToggle", "Speed: OFF", function(btn)
     isSpeedEnabled = not isSpeedEnabled
-    if humanoid then
+    if humanoid and humanoid.Parent then
+        -- safety check
         humanoid.WalkSpeed = isSpeedEnabled and 100 or 16
     end
-    speedToggleButton.Text = "Speed: " .. (isSpeedEnabled and "ON" or "OFF")
-    speedToggleButton.BackgroundColor3 = isSpeedEnabled and Color3.fromRGB(0, 150, 50) or Color3.fromRGB(50, 50, 50)
+    btn.Text = "Speed: " .. (isSpeedEnabled and "ON" or "OFF")
+    btn.BackgroundColor3 = isSpeedEnabled and Color3.fromRGB(0, 150, 50) or Color3.fromRGB(50, 50, 50)
 end)
 
 -- Toggle Highlight button
-local highlightToggleButton = createToggleButton("HighlightToggle", "Highlight: OFF", function()
+highlightToggleButton = createToggleButton("HighlightToggle", "Highlight: OFF", function(btn)
     isHighlighted = not isHighlighted
     if isHighlighted then
-        if character then
+        if character and character.Parent then
             if highlightInstance then highlightInstance:Destroy() end
             highlightInstance = Instance.new("Highlight")
             highlightInstance.Name = "SelfHighlight"
@@ -136,14 +154,12 @@ local highlightToggleButton = createToggleButton("HighlightToggle", "Highlight: 
             highlightInstance = nil
         end
     end
-    highlightToggleButton.Text = "Highlight: " .. (isHighlighted and "ON" or "OFF")
-    highlightToggleButton.BackgroundColor3 = isHighlighted and Color3.fromRGB(0, 150, 50) or Color3.fromRGB(50, 50, 50)
+    btn.Text = "Highlight: " .. (isHighlighted and "ON" or "OFF")
+    btn.BackgroundColor3 = isHighlighted and Color3.fromRGB(0, 150, 50) or Color3.fromRGB(50, 50, 50)
 end)
 
--- Adjust positions after UIListLayout
-titleLabel.Size = UDim2.new(1, 0, 0, 40)  -- Slightly taller title
-uiListLayout.Padding = UDim.new(0, 8)
-mainPanel.Size = UDim2.new(0, 140, 0, 40 + 3*35 + 3*8 + 20)  -- Auto size based on content
+-- Adjust main panel size to fit title + 3 buttons + padding
+mainPanel.Size = UDim2.new(0, 140, 0, 40 + 3*35 + 3*8 + 20)
 
 -- Draggable panel
 local dragging, dragInput, dragStart, startPos
@@ -152,7 +168,8 @@ mainPanel.InputBegan:Connect(function(input)
         dragging = true
         dragStart = input.Position
         startPos = mainPanel.Position
-        local conn = input.Changed:Connect(function()
+        local conn
+        conn = input.Changed:Connect(function()
             if input.UserInputState == Enum.UserInputState.End then
                 dragging = false
                 conn:Disconnect()
@@ -209,10 +226,11 @@ local downButton = createFlyButton("FlyDown", "↓", UDim2.new(0.85, 0, 0.78, 0)
 -- Helper to refresh character after respawn
 local function refreshCharacter(c)
     character = c
-    humanoid = character:WaitForChild("Humanoid")
-    rootPart = character:WaitForChild("HumanoidRootPart")
-    -- Re-apply states
-    if isSpeedEnabled then
+    humanoid = character:FindFirstChildOfClass("Humanoid") or character:WaitForChild("Humanoid")
+    rootPart = character:FindFirstChild("HumanoidRootPart") or rootPart
+
+    -- Re-apply states and GUI
+    if isSpeedEnabled and humanoid then
         humanoid.WalkSpeed = 100
     end
     if isHighlighted then
@@ -225,6 +243,16 @@ local function refreshCharacter(c)
         highlightInstance.OutlineTransparency = 0
         highlightInstance.Parent = character
     end
+
+    -- Update button visuals (if created)
+    if speedToggleButton then
+        speedToggleButton.Text = "Speed: " .. (isSpeedEnabled and "ON" or "OFF")
+        speedToggleButton.BackgroundColor3 = isSpeedEnabled and Color3.fromRGB(0,150,50) or Color3.fromRGB(50,50,50)
+    end
+    if highlightToggleButton then
+        highlightToggleButton.Text = "Highlight: " .. (isHighlighted and "ON" or "OFF")
+        highlightToggleButton.BackgroundColor3 = isHighlighted and Color3.fromRGB(0,150,50) or Color3.fromRGB(50,50,50)
+    end
 end
 
 if player.Character then
@@ -233,15 +261,17 @@ end
 player.CharacterAdded:Connect(refreshCharacter)
 
 -- Start/stop fly
-local function startFly()
+function startFly()
     if flying then return end
     if not character or not character.Parent then return end
     rootPart = character:FindFirstChild("HumanoidRootPart")
     if not rootPart then return end
 
     flying = true
-    flyToggleButton.Text = "Fly: ON"
-    flyToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
+    if flyToggleButton then
+        flyToggleButton.Text = "Fly: ON"
+        flyToggleButton.BackgroundColor3 = Color3.fromRGB(0, 150, 50)
+    end
     upButton.Visible = true
     downButton.Visible = true
 
@@ -264,11 +294,13 @@ local function startFly()
     end
 end
 
-local function stopFly()
+function stopFly()
     if not flying then return end
     flying = false
-    flyToggleButton.Text = "Fly: OFF"
-    flyToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    if flyToggleButton then
+        flyToggleButton.Text = "Fly: OFF"
+        flyToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
     upButton.Visible = false
     downButton.Visible = false
 
@@ -305,7 +337,7 @@ RunService.Heartbeat:Connect(function()
 
     local moveDir = Vector3.new(0,0,0)
     if humanoid then
-        moveDir = humanoid.MoveDirection
+        moveDir = humanoid.MoveDirection or Vector3.new(0,0,0)
     end
 
     local vert = 0
@@ -331,14 +363,20 @@ end)
 player.CharacterRemoving:Connect(function()
     stopFly()
     isSpeedEnabled = false
-    speedToggleButton.Text = "Speed: OFF"
-    speedToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    if speedToggleButton then
+        speedToggleButton.Text = "Speed: OFF"
+        speedToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
     if highlightInstance then
         highlightInstance:Destroy()
         highlightInstance = nil
     end
     isHighlighted = false
-    highlightToggleButton.Text = "Highlight: OFF"
-    highlightToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    if highlightToggleButton then
+        highlightToggleButton.Text = "Highlight: OFF"
+        highlightToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    end
 end)
---BLAKELY
+
+print("[ControlGUI] Loaded successfully")
+
