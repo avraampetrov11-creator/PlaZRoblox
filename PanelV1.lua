@@ -1,3 +1,4 @@
+```lua
 -- LocalScript for Roblox UI Panel
 -- Place this in StarterPlayerScripts or similar
 
@@ -7,30 +8,38 @@ gui.Parent = player:WaitForChild("PlayerGui")
 gui.Name = "PlaZPanel"
 gui.ResetOnSpawn = false  -- Prevent reset on respawn
 
--- Main Frame (Panel) with rounded corners
+-- Main Frame (Panel) with rounded corners - Made smaller
 local mainFrame = Instance.new("Frame")
 mainFrame.Parent = gui
-mainFrame.Size = UDim2.new(0.5, 0, 0.7, 0)  -- Big screen: 50% width, 70% height
-mainFrame.Position = UDim2.new(0.25, 0, 0.15, 0)  -- Centered
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)  -- Dark background
+mainFrame.Size = UDim2.new(0.3, 0, 0.5, 0)  -- Smaller: 30% width, 50% height
+mainFrame.Position = UDim2.new(0.35, 0, 0.25, 0)  -- Centered
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)  -- Darker professional background
 mainFrame.BorderSizePixel = 0
 
 -- Rounded corners for smooth design
 local uiCorner = Instance.new("UICorner")
-uiCorner.CornerRadius = UDim.new(0, 20)  -- Smooth round edges
+uiCorner.CornerRadius = UDim.new(0, 15)  -- Slightly smaller radius for professionalism
 uiCorner.Parent = mainFrame
 
--- Title Label "PlaZ" at the top
+-- Add UIGradient for professional look
+local uiGradient = Instance.new("UIGradient")
+uiGradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(20, 20, 20))
+}
+uiGradient.Parent = mainFrame
+
+-- Title Label "PlaZ" at the top - More professional font and styling
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Parent = mainFrame
 titleLabel.Size = UDim2.new(1, 0, 0.1, 0)  -- 10% height of frame
 titleLabel.Position = UDim2.new(0, 0, 0, 0)
 titleLabel.BackgroundTransparency = 1
 titleLabel.Text = "PlaZ"
-titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-titleLabel.TextSize = 40
-titleLabel.Font = Enum.Font.GothamBold
-titleLabel.TextStrokeTransparency = 0.8  -- Slight stroke for visibility
+titleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)  -- Softer white
+titleLabel.TextSize = 32  -- Slightly smaller for smaller panel
+titleLabel.Font = Enum.Font.GothamSemibold  -- More professional variant
+titleLabel.TextStrokeTransparency = 0.9  -- Subtler stroke
 
 -- ScrollingFrame for buttons to make it "long" with many features
 local scrollingFrame = Instance.new("ScrollingFrame")
@@ -38,31 +47,39 @@ scrollingFrame.Parent = mainFrame
 scrollingFrame.Size = UDim2.new(1, 0, 0.9, 0)
 scrollingFrame.Position = UDim2.new(0, 0, 0.1, 0)
 scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.ScrollBarThickness = 8
+scrollingFrame.ScrollBarThickness = 6  -- Thinner scrollbar for pro look
 scrollingFrame.CanvasSize = UDim2.new(0, 0, 2, 0)  -- Make it long vertically
 
 -- UIListLayout for organizing buttons vertically
 local uiListLayout = Instance.new("UIListLayout")
 uiListLayout.Parent = scrollingFrame
-uiListLayout.Padding = UDim.new(0, 10)
+uiListLayout.Padding = UDim.new(0, 8)  -- Tighter padding
 uiListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 uiListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Function to create a button
+-- Function to create a button - More professional styling
 local function createButton(name, callback)
     local button = Instance.new("TextButton")
     button.Parent = scrollingFrame
-    button.Size = UDim2.new(0.8, 0, 0, 50)  -- Wide buttons
-    button.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    button.Size = UDim2.new(0.9, 0, 0, 40)  -- Slightly smaller buttons
+    button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)  -- Professional gray
     button.Text = name
-    button.TextColor3 = Color3.fromRGB(255, 255, 255)
-    button.TextSize = 24
-    button.Font = Enum.Font.Gotham
+    button.TextColor3 = Color3.fromRGB(220, 220, 220)
+    button.TextSize = 20
+    button.Font = Enum.Font.GothamMedium
     button.BorderSizePixel = 0
     
     local buttonCorner = Instance.new("UICorner")
-    buttonCorner.CornerRadius = UDim.new(0, 10)
+    buttonCorner.CornerRadius = UDim.new(0, 8)
     buttonCorner.Parent = button
+    
+    -- Add hover effect for professionalism
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    end)
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    end)
     
     button.MouseButton1Click:Connect(callback)
     return button
@@ -110,15 +127,16 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- Fly Button
+-- Fly Button - Updated with joystick for mobile
 createButton("Fly", function()
-    -- Simple fly script with mobile support
+    -- Simple fly script with mobile joystick support
     local flying = false
     local speed = 50
     local bodyGyro = Instance.new("BodyGyro")
     local bodyVelocity = Instance.new("BodyVelocity")
     local controlsGui
-    local moveDirections = {}
+    local moveVector = Vector3.new(0, 0, 0)
+    local verticalMove = 0  -- For up/down separately
     
     if flying then
         flying = false
@@ -135,25 +153,70 @@ createButton("Fly", function()
         bodyVelocity.Velocity = Vector3.new(0, 0, 0)
         bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
         
-        -- Mobile controls if touch enabled
+        -- Mobile joystick if touch enabled
         if UIS.TouchEnabled then
             controlsGui = Instance.new("ScreenGui")
             controlsGui.Parent = player.PlayerGui
             controlsGui.Name = "FlyControls"
             
-            local directionVectors = {
-                Forward = Vector3.new(0, 0, -1),
-                Backward = Vector3.new(0, 0, 1),
-                Left = Vector3.new(-1, 0, 0),
-                Right = Vector3.new(1, 0, 0),
-                Up = Vector3.new(0, 1, 0),
-                Down = Vector3.new(0, -1, 0)
-            }
+            -- Joystick for horizontal movement (left/right/forward/back)
+            local joystickFrame = Instance.new("Frame")
+            joystickFrame.Size = UDim2.new(0.2, 0, 0.3, 0)
+            joystickFrame.Position = UDim2.new(0.05, 0, 0.7, 0)
+            joystickFrame.BackgroundTransparency = 0.5
+            joystickFrame.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+            joystickFrame.Parent = controlsGui
             
-            -- Create buttons with positions (simple layout)
-            local function createControlButton(name, pos)
+            local joystickCorner = Instance.new("UICorner")
+            joystickCorner.CornerRadius = UDim.new(0.5, 0)  -- Circular
+            joystickCorner.Parent = joystickFrame
+            
+            local thumb = Instance.new("Frame")
+            thumb.Size = UDim2.new(0.4, 0, 0.4, 0)  -- Smaller thumb
+            thumb.Position = UDim2.new(0.3, 0, 0.3, 0)
+            thumb.BackgroundColor3 = Color3.fromRGB(200, 200, 200)
+            thumb.Parent = joystickFrame
+            
+            local thumbCorner = Instance.new("UICorner")
+            thumbCorner.CornerRadius = UDim.new(0.5, 0)
+            thumbCorner.Parent = thumb
+            
+            -- Joystick logic
+            local touchObject
+            local center = UDim2.new(0.5, 0, 0.5, 0)
+            joystickFrame.InputBegan:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch then
+                    touchObject = input
+                    thumb.Position = center
+                end
+            end)
+            
+            joystickFrame.InputEnded:Connect(function(input)
+                if input.UserInputType == Enum.UserInputType.Touch then
+                    touchObject = nil
+                    thumb.Position = center
+                    moveVector = Vector3.new(0, 0, 0)
+                end
+            end)
+            
+            UIS.InputChanged:Connect(function(input)
+                if input == touchObject then
+                    local absPos = joystickFrame.AbsolutePosition
+                    local absSize = joystickFrame.AbsoluteSize
+                    local delta = (input.Position - Vector3.new(absPos.X + absSize.X / 2, absPos.Y + absSize.Y / 2, 0)) / (absSize.X / 2)
+                    local magnitude = delta.Magnitude
+                    if magnitude > 1 then
+                        delta = delta.Unit
+                    end
+                    thumb.Position = center + UDim2.new(0.3 * delta.X, 0, 0.3 * delta.Y)
+                    moveVector = Vector3.new(delta.X, 0, -delta.Y)  -- X for left/right, Z for forward/back
+                end
+            end)
+            
+            -- Vertical buttons for up/down (simpler, as joystick is for horizontal)
+            local function createVerticalButton(name, pos, direction)
                 local btn = Instance.new("TextButton")
-                btn.Size = UDim2.new(0, 80, 0, 80)
+                btn.Size = UDim2.new(0.1, 0, 0.1, 0)
                 btn.Position = pos
                 btn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
                 btn.Text = name
@@ -162,30 +225,24 @@ createButton("Fly", function()
                 btn.Parent = controlsGui
                 
                 local btnCorner = Instance.new("UICorner")
-                btnCorner.CornerRadius = UDim.new(0, 40)  -- Round buttons
+                btnCorner.CornerRadius = UDim.new(0.5, 0)
                 btnCorner.Parent = btn
                 
-                btn.MouseButton1Down:Connect(function()
-                    moveDirections[name] = true
+                btn.InputBegan:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch then
+                        verticalMove = direction
+                    end
                 end)
-                btn.MouseButton1Up:Connect(function()
-                    moveDirections[name] = nil
-                end)
-                btn.TouchLongPress:Connect(function()  -- For better mobile hold
-                    moveDirections[name] = true
-                end)
-                btn.MouseLeave:Connect(function()
-                    moveDirections[name] = nil
+                
+                btn.InputEnded:Connect(function(input)
+                    if input.UserInputType == Enum.UserInputType.Touch then
+                        verticalMove = 0
+                    end
                 end)
             end
             
-            -- Positions: Left bottom for movement cross, right for up/down
-            createControlButton("Forward", UDim2.new(0.1, 0, 0.8, 0))
-            createControlButton("Backward", UDim2.new(0.1, 0, 0.95, 0))
-            createControlButton("Left", UDim2.new(0.05, 0, 0.875, 0))
-            createControlButton("Right", UDim2.new(0.15, 0, 0.875, 0))
-            createControlButton("Up", UDim2.new(0.85, 0, 0.8, 0))
-            createControlButton("Down", UDim2.new(0.85, 0, 0.9, 0))
+            createVerticalButton("Up", UDim2.new(0.85, 0, 0.7, 0), 1)
+            createVerticalButton("Down", UDim2.new(0.85, 0, 0.85, 0), -1)
         end
         
         spawn(function()
@@ -193,24 +250,21 @@ createButton("Fly", function()
                 local move = Vector3.new(0, 0, 0)
                 
                 -- Keyboard inputs
-                if UIS:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(0, 0, -speed) end
-                if UIS:IsKeyDown(Enum.KeyCode.S) then move = move + Vector3.new(0, 0, speed) end
-                if UIS:IsKeyDown(Enum.KeyCode.A) then move = move + Vector3.new(-speed, 0, 0) end
-                if UIS:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(speed, 0, 0) end
-                if UIS:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, speed, 0) end
-                if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move = move + Vector3.new(0, -speed, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.W) then move = move + Vector3.new(0, 0, -1) end
+                if UIS:IsKeyDown(Enum.KeyCode.S) then move = move + Vector3.new(0, 0, 1) end
+                if UIS:IsKeyDown(Enum.KeyCode.A) then move = move + Vector3.new(-1, 0, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.D) then move = move + Vector3.new(1, 0, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.Space) then move = move + Vector3.new(0, 1, 0) end
+                if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move = move + Vector3.new(0, -1, 0) end
                 
-                -- Mobile button inputs
-                for dir, active in pairs(moveDirections) do
-                    if active then
-                        if dir == "Forward" then move = move + Vector3.new(0, 0, -speed) end
-                        if dir == "Backward" then move = move + Vector3.new(0, 0, speed) end
-                        if dir == "Left" then move = move + Vector3.new(-speed, 0, 0) end
-                        if dir == "Right" then move = move + Vector3.new(speed, 0, 0) end
-                        if dir == "Up" then move = move + Vector3.new(0, speed, 0) end
-                        if dir == "Down" then move = move + Vector3.new(0, -speed, 0) end
-                    end
+                -- Normalize and scale keyboard move
+                if move.Magnitude > 0 then
+                    move = move.Unit
                 end
+                move = move * speed
+                
+                -- Mobile joystick and vertical
+                move = move + moveVector * speed + Vector3.new(0, verticalMove * speed, 0)
                 
                 local hrp = player.Character.HumanoidRootPart
                 bodyVelocity.Velocity = (hrp.CFrame.LookVector * move.Z + hrp.CFrame.RightVector * move.X + hrp.CFrame.UpVector * move.Y)
@@ -332,20 +386,28 @@ end)
 -- Adjust CanvasSize based on number of buttons
 scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, uiListLayout.AbsoluteContentSize.Y + 20)
 
--- Close Button at top right
+-- Close Button at top right - More professional
 local closeButton = Instance.new("TextButton")
 closeButton.Parent = mainFrame
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -40, 0, 10)
-closeButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+closeButton.Size = UDim2.new(0, 25, 0, 25)
+closeButton.Position = UDim2.new(1, -35, 0, 8)
+closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)  -- Softer red
 closeButton.Text = "X"
 closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeButton.TextSize = 20
+closeButton.TextSize = 18
 closeButton.BorderSizePixel = 0
 
 local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 5)
+closeCorner.CornerRadius = UDim.new(0.5, 0)  -- Rounder
 closeCorner.Parent = closeButton
+
+-- Hover effect for close button
+closeButton.MouseEnter:Connect(function()
+    closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+end)
+closeButton.MouseLeave:Connect(function()
+    closeButton.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+end)
 
 closeButton.MouseButton1Click:Connect(function()
     gui:Destroy()
