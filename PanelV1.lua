@@ -1,4 +1,3 @@
-```lua
 -- LocalScript for Roblox UI Panel
 -- Place this in StarterPlayerScripts or similar
 
