@@ -341,3 +341,4 @@ player.CharacterRemoving:Connect(function()
     highlightToggleButton.Text = "Highlight: OFF"
     highlightToggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 end)
+--BLAKELY
