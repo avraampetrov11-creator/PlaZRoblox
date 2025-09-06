@@ -1,3 +1,4 @@
+```lua
 -- LocalScript for Roblox UI Panel
 -- Place this in StarterPlayerScripts or similar
 
@@ -411,3 +412,4 @@ end)
 closeButton.MouseButton1Click:Connect(function()
     gui:Destroy()
 end)
+```
