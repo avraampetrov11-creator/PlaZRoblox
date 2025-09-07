@@ -1,4 +1,4 @@
--- ServerScriptService Script
+-- ServerScriptService Scriptу
 local Players = game:GetService("Players")
 local InsertService = game:GetService("InsertService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
