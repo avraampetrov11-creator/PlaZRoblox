@@ -16,3 +16,4 @@ end
 
 -- Fire immediately (or you can put this inside a function / input check)
 SubterPhase2:FireServer()
+print("did")
