@@ -5,7 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 
 -- References
-local SubterPhase2 = ReplicatedStorage:FindFirstChild("2017XPhase2")
+local SubterPhase2 = ReplicatedStorage:FindFirstChild("DoeRage")
 local LocalPlayer = Players.LocalPlayer
 
 -- Safety check
@@ -15,5 +15,5 @@ if not SubterPhase2 or not LocalPlayer then
 end
 
 -- Fire immediately (or you can put this inside a function / input check)
-SubterPhase2:FireServer()
-print("did")
+SubterPhase2:FireServer(LocalPlayer)
+print("doe rage did")
