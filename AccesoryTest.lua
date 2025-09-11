@@ -2,7 +2,6 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local MarketplaceService = game:GetService("MarketplaceService")
 local Core_Replication = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Core_Replication")
 
 local LocalPlayer = Players.LocalPlayer
@@ -166,17 +165,17 @@ local function createAccessoryButton(accessory)
 	label.TextWrapped = true
 	label.Parent = button
 
-	-- 🔹 Use mesh texture instead of Roblox asset thumbnails
+	-- Use mesh texture instead of Roblox thumbnails
 	local handle = accessory:FindFirstChild("Handle")
 	if handle then
 		local mesh = handle:FindFirstChildOfClass("SpecialMesh")
 		if mesh and mesh.TextureId ~= "" then
 			button.Image = mesh.TextureId
 		else
-			button.Image = "rbxassetid://0" -- fallback
+			button.Image = "rbxassetid://0"
 		end
 	else
-		button.Image = "rbxassetid://0" -- fallback
+		button.Image = "rbxassetid://0"
 	end
 
 	button.MouseButton1Click:Connect(function()
@@ -186,7 +185,6 @@ local function createAccessoryButton(accessory)
 		end
 	end)
 end
-
 
 local function addPlayerAccessories(player)
 	local function scan(char)
@@ -199,6 +197,14 @@ local function addPlayerAccessories(player)
 	end
 	player.CharacterAdded:Connect(scan)
 	if player.Character then scan(player.Character) end
+end
+
+local function scanReplicatedStorageAccessories()
+	for _, accessory in ipairs(ReplicatedStorage:GetDescendants()) do
+		if accessory:IsA("Accessory") then
+			createAccessoryButton(accessory)
+		end
+	end
 end
 
 -- ===== CLOTHING =====
@@ -236,16 +242,18 @@ local function createClothingButton(assetId, className, instance)
 		local character = LocalPlayer.Character
 		if not character then return end
 
-		-- Check for existing clothing of same type
+		-- Remove old clothing of same type
 		if className == "Shirt" then
 			local old = character:FindFirstChildOfClass("Shirt")
 			if old and old ~= instance then
 				Core_Replication:FireServer("Tools", "Remove", old, character)
+				old:Destroy()
 			end
 		elseif className == "Pants" then
 			local old = character:FindFirstChildOfClass("Pants")
 			if old and old ~= instance then
 				Core_Replication:FireServer("Tools", "Remove", old, character)
+				old:Destroy()
 			end
 		end
 
@@ -253,7 +261,6 @@ local function createClothingButton(assetId, className, instance)
 		Core_Replication:FireServer("Tools", "Add", instance, character)
 	end)
 end
-
 
 local function addPlayerClothing(player)
 	local function scanClothing(char)
@@ -274,6 +281,18 @@ local function addPlayerClothing(player)
 	if player.Character then scanClothing(player.Character) end
 end
 
+local function scanReplicatedStorageClothing()
+	for _, item in ipairs(ReplicatedStorage:GetDescendants()) do
+		if item:IsA("Shirt") and item.ShirtTemplate ~= "" then
+			local id = tonumber(item.ShirtTemplate:match("%d+"))
+			if id then createClothingButton(id, "Shirt", item) end
+		elseif item:IsA("Pants") and item.PantsTemplate ~= "" then
+			local id = tonumber(item.PantsTemplate:match("%d+"))
+			if id then createClothingButton(id, "Pants", item) end
+		end
+	end
+end
+
 -- Hook up players
 for _, player in ipairs(Players:GetPlayers()) do
 	addPlayerAccessories(player)
@@ -283,5 +302,10 @@ Players.PlayerAdded:Connect(function(player)
 	addPlayerAccessories(player)
 	addPlayerClothing(player)
 end)
+
+-- Scan ReplicatedStorage
+scanReplicatedStorageAccessories()
+scanReplicatedStorageClothing()
+
 
 
