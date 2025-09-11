@@ -109,6 +109,11 @@ uiGrid.FillDirectionMaxCells = 4
 uiGrid.SortOrder = Enum.SortOrder.LayoutOrder
 uiGrid.Parent = scrollingFrame
 
+-- Make scrolling work automatically
+uiGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+	scrollingFrame.CanvasSize = UDim2.new(0, uiGrid.AbsoluteContentSize.X, 0, uiGrid.AbsoluteContentSize.Y)
+end)
+
 -- Store accessories we've already added
 local accessoryButtons = {}
 
