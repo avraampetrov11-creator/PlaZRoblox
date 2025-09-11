@@ -9,14 +9,14 @@ local LocalPlayer = Players.LocalPlayer
 
 -- ScreenGui setup
 local screenGui = Instance.new("ScreenGui")
-screenGui.Name = "AccessoryPanel"
+screenGui.Name = "InventoryPanel"
 screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Main frame container
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 450, 0, 350)
+mainFrame.Size = UDim2.new(0, 500, 0, 400)
 mainFrame.Position = UDim2.new(0, 20, 0, 100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Active = true
@@ -40,140 +40,121 @@ titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 12)
-titleCorner.Parent = titleBar
-
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -90, 1, 0)
+title.Size = UDim2.new(1, -140, 1, 0)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Accessory Panel"
+title.Text = "Inventory"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
--- Close button
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 30, 0, 30)
-closeBtn.Position = UDim2.new(1, -35, 0.5, -15)
-closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-closeBtn.Text = "X"
-closeBtn.Font = Enum.Font.GothamBold
-closeBtn.TextSize = 16
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.Parent = titleBar
+-- Tab buttons
+local tabBar = Instance.new("Frame")
+tabBar.Size = UDim2.new(1, 0, 0, 35)
+tabBar.Position = UDim2.new(0, 0, 0, 40)
+tabBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+tabBar.BorderSizePixel = 0
+tabBar.Parent = mainFrame
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(1, 0)
-closeCorner.Parent = closeBtn
+local accessoriesTab = Instance.new("TextButton")
+accessoriesTab.Size = UDim2.new(0.5, 0, 1, 0)
+accessoriesTab.Text = "Accessories"
+accessoriesTab.Font = Enum.Font.GothamBold
+accessoriesTab.TextSize = 16
+accessoriesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+accessoriesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+accessoriesTab.Parent = tabBar
 
--- Minimize button
-local minimizeBtn = Instance.new("TextButton")
-minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
-minimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
-minimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
-minimizeBtn.Text = "-"
-minimizeBtn.Font = Enum.Font.GothamBold
-minimizeBtn.TextSize = 20
-minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-minimizeBtn.Parent = titleBar
+local clothingTab = Instance.new("TextButton")
+clothingTab.Size = UDim2.new(0.5, 0, 1, 0)
+clothingTab.Position = UDim2.new(0.5, 0, 0, 0)
+clothingTab.Text = "Clothing"
+clothingTab.Font = Enum.Font.GothamBold
+clothingTab.TextSize = 16
+clothingTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+clothingTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+clothingTab.Parent = tabBar
 
-local minimizeCorner = Instance.new("UICorner")
-minimizeCorner.CornerRadius = UDim.new(1, 0)
-minimizeCorner.Parent = minimizeBtn
+-- Container for tab contents
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -75)
+contentFrame.Position = UDim2.new(0, 0, 0, 75)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainFrame
 
--- ScrollingFrame for accessory icons
-local scrollingFrame = Instance.new("ScrollingFrame")
-scrollingFrame.Size = UDim2.new(1, -20, 1, -55)
-scrollingFrame.Position = UDim2.new(0, 10, 0, 45)
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- initial; AutomaticCanvasSize will control it
-scrollingFrame.ScrollBarThickness = 8
-scrollingFrame.BackgroundTransparency = 1
-scrollingFrame.BorderSizePixel = 0
-scrollingFrame.Active = true -- helps ensure mouse-wheel works
--- Let Roblox automatically set canvas height based on content
-scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-scrollingFrame.Parent = mainFrame
+-- === Accessories Tab ===
+local accessoriesFrame = Instance.new("ScrollingFrame")
+accessoriesFrame.Size = UDim2.new(1, -20, 1, -10)
+accessoriesFrame.Position = UDim2.new(0, 10, 0, 5)
+accessoriesFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+accessoriesFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+accessoriesFrame.ScrollBarThickness = 8
+accessoriesFrame.BackgroundTransparency = 1
+accessoriesFrame.Active = true
+accessoriesFrame.Parent = contentFrame
 
-local padding = Instance.new("UIPadding")
-padding.PaddingTop = UDim.new(0, 5)
-padding.PaddingBottom = UDim.new(0, 5)
-padding.PaddingLeft = UDim.new(0, 5)
-padding.PaddingRight = UDim.new(0, 5)
-padding.Parent = scrollingFrame
+local accGrid = Instance.new("UIGridLayout")
+accGrid.CellSize = UDim2.new(0, 100, 0, 110)
+accGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+accGrid.FillDirectionMaxCells = 4
+accGrid.SortOrder = Enum.SortOrder.LayoutOrder
+accGrid.Parent = accessoriesFrame
 
--- UIGridLayout (must be direct child of ScrollingFrame for AutomaticCanvasSize to work)
-local uiGrid = Instance.new("UIGridLayout")
-uiGrid.CellSize = UDim2.new(0, 100, 0, 110)
-uiGrid.CellPadding = UDim2.new(0, 10, 0, 10)
-uiGrid.FillDirectionMaxCells = 4
-uiGrid.SortOrder = Enum.SortOrder.LayoutOrder
-uiGrid.Parent = scrollingFrame
+-- === Clothing Tab ===
+local clothingFrame = Instance.new("ScrollingFrame")
+clothingFrame.Size = UDim2.new(1, -20, 1, -10)
+clothingFrame.Position = UDim2.new(0, 10, 0, 5)
+clothingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+clothingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+clothingFrame.ScrollBarThickness = 8
+clothingFrame.BackgroundTransparency = 1
+clothingFrame.Active = true
+clothingFrame.Visible = false
+clothingFrame.Parent = contentFrame
 
--- (Optional) keep CanvasSize updated as a fallback (won't hurt)
-uiGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-	scrollingFrame.CanvasSize = UDim2.new(0, uiGrid.AbsoluteContentSize.X, 0, uiGrid.AbsoluteContentSize.Y)
+local clothGrid = Instance.new("UIGridLayout")
+clothGrid.CellSize = UDim2.new(0, 120, 0, 150)
+clothGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+clothGrid.FillDirectionMaxCells = 3
+clothGrid.SortOrder = Enum.SortOrder.LayoutOrder
+clothGrid.Parent = clothingFrame
+
+-- Tab switching
+accessoriesTab.MouseButton1Click:Connect(function()
+	accessoriesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	clothingTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	accessoriesFrame.Visible = true
+	clothingFrame.Visible = false
 end)
 
--- Store accessories we've already added
+clothingTab.MouseButton1Click:Connect(function()
+	clothingTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	accessoriesTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	clothingFrame.Visible = true
+	accessoriesFrame.Visible = false
+end)
+
+-- ===== ACCESSORIES =====
 local accessoryButtons = {}
 
--- Function to create a button for an accessory
 local function createAccessoryButton(accessory)
 	if accessoryButtons[accessory] then return end
 	accessoryButtons[accessory] = true
 
-	local button = Instance.new("Frame")
+	local button = Instance.new("ImageButton")
 	button.Size = UDim2.new(0, 100, 0, 110)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	button.Name = accessory.Name
-	button.Parent = scrollingFrame
+	button.ScaleType = Enum.ScaleType.Fit
+	button.Parent = accessoriesFrame
 
 	local btnCorner = Instance.new("UICorner")
 	btnCorner.CornerRadius = UDim.new(0, 10)
 	btnCorner.Parent = button
 
-	local btnStroke = Instance.new("UIStroke")
-	btnStroke.Thickness = 1.5
-	btnStroke.Color = Color3.fromRGB(90, 90, 90)
-	btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	btnStroke.Parent = button
-
-	-- Image for accessory
-	local imageButton = Instance.new("ImageButton")
-	imageButton.Size = UDim2.new(1, -10, 0, 80)
-	imageButton.Position = UDim2.new(0, 5, 0, 5)
-	imageButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	imageButton.Parent = button
-	imageButton.ScaleType = Enum.ScaleType.Fit -- keeps image aspect ratio and looks better
-
-	local imgCorner = Instance.new("UICorner")
-	imgCorner.CornerRadius = UDim.new(0, 8)
-	imgCorner.Parent = imageButton
-
-	-- Try to get Roblox catalog thumbnail
-	local success, info = pcall(function()
-		-- Some accessories (created in Studio) might not have AssetId; pcall prevents errors
-		return MarketplaceService:GetProductInfo(accessory.AssetId)
-	end)
-
-	if success and info and info.AssetId then
-		imageButton.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", info.AssetId)
-	else
-		-- Fallback: try special mesh texture, otherwise default placeholder
-		local handle = accessory:FindFirstChild("Handle")
-		local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
-		if mesh and mesh.TextureId and mesh.TextureId ~= "" then
-			imageButton.Image = mesh.TextureId
-		else
-			imageButton.Image = "rbxassetid://0"
-		end
-	end
-
-	-- Label for accessory name
 	local label = Instance.new("TextLabel")
 	label.Size = UDim2.new(1, -10, 0, 20)
 	label.Position = UDim2.new(0, 5, 1, -25)
@@ -185,16 +166,18 @@ local function createAccessoryButton(accessory)
 	label.TextWrapped = true
 	label.Parent = button
 
-	-- Hover effect
-	imageButton.MouseEnter:Connect(function()
-		button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-	end)
-	imageButton.MouseLeave:Connect(function()
-		button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	-- Thumbnail
+	local success, info = pcall(function()
+		return MarketplaceService:GetProductInfo(accessory.AssetId)
 	end)
 
-	-- Click connection
-	imageButton.MouseButton1Click:Connect(function()
+	if success and info and info.AssetId then
+		button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", info.AssetId)
+	else
+		button.Image = "rbxassetid://0"
+	end
+
+	button.MouseButton1Click:Connect(function()
 		local character = LocalPlayer.Character
 		if character then
 			Core_Replication:FireServer("Tools", "Add", accessory, character)
@@ -202,48 +185,85 @@ local function createAccessoryButton(accessory)
 	end)
 end
 
--- Function to add accessories for a player
 local function addPlayerAccessories(player)
-	player.CharacterAdded:Connect(function(char)
+	local function scan(char)
 		task.wait(1)
 		for _, accessory in ipairs(char:GetChildren()) do
 			if accessory:IsA("Accessory") then
 				createAccessoryButton(accessory)
 			end
 		end
-	end)
+	end
+	player.CharacterAdded:Connect(scan)
+	if player.Character then scan(player.Character) end
+end
 
-	if player.Character then
-		for _, accessory in ipairs(player.Character:GetChildren()) do
-			if accessory:IsA("Accessory") then
-				createAccessoryButton(accessory)
-			end
+-- ===== CLOTHING =====
+local clothingButtons = {}
+
+local function createClothingButton(assetId, className, instance)
+	if not assetId or assetId == 0 or clothingButtons[assetId] then return end
+	clothingButtons[assetId] = true
+
+	local button = Instance.new("ImageButton")
+	button.Size = UDim2.new(0, 120, 0, 150)
+	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	button.Name = tostring(assetId)
+	button.ScaleType = Enum.ScaleType.Fit
+	button.Parent = clothingFrame
+
+	local btnCorner = Instance.new("UICorner")
+	btnCorner.CornerRadius = UDim.new(0, 10)
+	btnCorner.Parent = button
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 20)
+	label.Position = UDim2.new(0, 5, 1, -25)
+	label.BackgroundTransparency = 1
+	label.Text = className
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.TextWrapped = true
+	label.Parent = button
+
+	button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", assetId)
+
+	button.MouseButton1Click:Connect(function()
+		local character = LocalPlayer.Character
+		if character then
+			Core_Replication:FireServer("Tools", "Add", instance, character)
+		end
+	end)
+end
+
+local function addPlayerClothing(player)
+	local function scanClothing(char)
+		task.wait(1)
+		local shirt = char:FindFirstChildOfClass("Shirt")
+		local pants = char:FindFirstChildOfClass("Pants")
+
+		if shirt and shirt.ShirtTemplate ~= "" then
+			local id = tonumber(shirt.ShirtTemplate:match("%d+"))
+			if id then createClothingButton(id, "Shirt", shirt) end
+		end
+		if pants and pants.PantsTemplate ~= "" then
+			local id = tonumber(pants.PantsTemplate:match("%d+"))
+			if id then createClothingButton(id, "Pants", pants) end
 		end
 	end
+	player.CharacterAdded:Connect(scanClothing)
+	if player.Character then scanClothing(player.Character) end
 end
 
--- Hook up existing players
+-- Hook up players
 for _, player in ipairs(Players:GetPlayers()) do
 	addPlayerAccessories(player)
+	addPlayerClothing(player)
 end
-
-Players.PlayerAdded:Connect(addPlayerAccessories)
-
--- Close & minimize logic
-closeBtn.MouseButton1Click:Connect(function()
-	mainFrame.Visible = false
+Players.PlayerAdded:Connect(function(player)
+	addPlayerAccessories(player)
+	addPlayerClothing(player)
 end)
 
-local minimized = false
-minimizeBtn.MouseButton1Click:Connect(function()
-	if minimized then
-		scrollingFrame.Visible = true
-		mainFrame.Size = UDim2.new(0, 450, 0, 350)
-		minimized = false
-	else
-		scrollingFrame.Visible = false
-		mainFrame.Size = UDim2.new(0, 450, 0, 50)
-		minimized = true
-	end
-end)
 
