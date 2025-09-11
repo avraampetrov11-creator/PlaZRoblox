@@ -237,14 +237,12 @@ local function createClothingButton(assetId, className, instance)
 		if className == "Shirt" then
 			local old = character:FindFirstChildOfClass("Shirt")
 			if old and old ~= instance then
-				Core_Replication:FireServer("Tools", "Delete", old, character)
-				old:Destroy()
+				Core_Replication:FireServer("Tools", "Remove", old, character)
 			end
 		elseif className == "Pants" then
 			local old = character:FindFirstChildOfClass("Pants")
 			if old and old ~= instance then
-				Core_Replication:FireServer("Tools", "Delete", old, character)
-				old:Destroy()
+				Core_Replication:FireServer("Tools", "Remove", old, character)
 			end
 		end
 
