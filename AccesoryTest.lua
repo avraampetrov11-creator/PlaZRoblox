@@ -2,6 +2,7 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local MarketplaceService = game:GetService("MarketplaceService")
 local Core_Replication = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Core_Replication")
 
 local LocalPlayer = Players.LocalPlayer
@@ -10,6 +11,7 @@ local LocalPlayer = Players.LocalPlayer
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "AccessoryPanel"
 screenGui.ResetOnSpawn = false
+screenGui.IgnoreGuiInset = true
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- Main frame container
@@ -17,31 +19,71 @@ local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 450, 0, 350)
 mainFrame.Position = UDim2.new(0, 20, 0, 100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+mainFrame.Active = true
+mainFrame.Draggable = true
 mainFrame.Parent = screenGui
 
--- Rounded corners
 local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 12)
 mainCorner.Parent = mainFrame
 
--- Stroke outline
 local stroke = Instance.new("UIStroke")
 stroke.Thickness = 2
 stroke.Color = Color3.fromRGB(60, 60, 60)
 stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 stroke.Parent = mainFrame
 
--- Title label
+-- Title bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 40)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12)
+titleCorner.Parent = titleBar
+
 local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, -20, 0, 40)
-title.Position = UDim2.new(0, 10, 0, 5)
+title.Size = UDim2.new(1, -90, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Accessory Panel"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = mainFrame
+title.Parent = titleBar
+
+-- Close button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -35, 0.5, -15)
+closeBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+closeBtn.Text = "X"
+closeBtn.Font = Enum.Font.GothamBold
+closeBtn.TextSize = 16
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeBtn
+
+-- Minimize button
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -70, 0.5, -15)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 200)
+minimizeBtn.Text = "-"
+minimizeBtn.Font = Enum.Font.GothamBold
+minimizeBtn.TextSize = 20
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.Parent = titleBar
+
+local minimizeCorner = Instance.new("UICorner")
+minimizeCorner.CornerRadius = UDim.new(1, 0)
+minimizeCorner.Parent = minimizeBtn
 
 -- ScrollingFrame for accessory icons
 local scrollingFrame = Instance.new("ScrollingFrame")
@@ -53,7 +95,6 @@ scrollingFrame.BackgroundTransparency = 1
 scrollingFrame.BorderSizePixel = 0
 scrollingFrame.Parent = mainFrame
 
--- Padding inside scrolling frame
 local padding = Instance.new("UIPadding")
 padding.PaddingTop = UDim.new(0, 5)
 padding.PaddingBottom = UDim.new(0, 5)
@@ -61,9 +102,8 @@ padding.PaddingLeft = UDim.new(0, 5)
 padding.PaddingRight = UDim.new(0, 5)
 padding.Parent = scrollingFrame
 
--- Grid layout
 local uiGrid = Instance.new("UIGridLayout")
-uiGrid.CellSize = UDim2.new(0, 90, 0, 90)
+uiGrid.CellSize = UDim2.new(0, 100, 0, 110)
 uiGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 uiGrid.FillDirectionMaxCells = 4
 uiGrid.SortOrder = Enum.SortOrder.LayoutOrder
@@ -74,50 +114,69 @@ local accessoryButtons = {}
 
 -- Function to create a button for an accessory
 local function createAccessoryButton(accessory)
-	if accessoryButtons[accessory] then return end -- prevent duplicates
+	if accessoryButtons[accessory] then return end
 	accessoryButtons[accessory] = true
 
-	local button = Instance.new("ImageButton")
-	button.Size = UDim2.new(0, 90, 0, 90)
+	local button = Instance.new("Frame")
+	button.Size = UDim2.new(0, 100, 0, 110)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	button.Name = accessory.Name
 	button.Parent = scrollingFrame
 
-	-- Rounded corners
 	local btnCorner = Instance.new("UICorner")
 	btnCorner.CornerRadius = UDim.new(0, 10)
 	btnCorner.Parent = button
 
-	-- Button outline
 	local btnStroke = Instance.new("UIStroke")
 	btnStroke.Thickness = 1.5
 	btnStroke.Color = Color3.fromRGB(90, 90, 90)
 	btnStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 	btnStroke.Parent = button
 
-	-- Try using the accessory thumbnail (if it has an asset id)
-	local handle = accessory:FindFirstChild("Handle")
-	if handle and handle:FindFirstChildOfClass("SpecialMesh") then
-		local mesh = handle:FindFirstChildOfClass("SpecialMesh")
-		if mesh.TextureId ~= "" then
-			button.Image = mesh.TextureId
-		else
-			button.Image = "rbxassetid://0" -- fallback
-		end
+	-- Image for accessory
+	local imageButton = Instance.new("ImageButton")
+	imageButton.Size = UDim2.new(1, -10, 0, 80)
+	imageButton.Position = UDim2.new(0, 5, 0, 5)
+	imageButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	imageButton.Parent = button
+
+	local imgCorner = Instance.new("UICorner")
+	imgCorner.CornerRadius = UDim.new(0, 8)
+	imgCorner.Parent = imageButton
+
+	-- Try to get Roblox catalog thumbnail
+	local success, info = pcall(function()
+		return MarketplaceService:GetProductInfo(accessory.AssetId)
+	end)
+
+	if success and info and info.AssetId then
+		imageButton.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", info.AssetId)
 	else
-		button.Image = "rbxassetid://0" -- fallback
+		imageButton.Image = "rbxassetid://0" -- fallback
 	end
 
+	-- Label for accessory name
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 20)
+	label.Position = UDim2.new(0, 5, 1, -25)
+	label.BackgroundTransparency = 1
+	label.Text = accessory.Name
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.TextWrapped = true
+	label.Parent = button
+
 	-- Hover effect
-	button.MouseEnter:Connect(function()
+	imageButton.MouseEnter:Connect(function()
 		button.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	end)
-	button.MouseLeave:Connect(function()
+	imageButton.MouseLeave:Connect(function()
 		button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	end)
 
 	-- Click connection
-	button.MouseButton1Click:Connect(function()
+	imageButton.MouseButton1Click:Connect(function()
 		local character = LocalPlayer.Character
 		if character then
 			Core_Replication:FireServer("Tools", "Add", accessory, character)
@@ -125,10 +184,10 @@ local function createAccessoryButton(accessory)
 	end)
 end
 
--- Function to get a player’s accessories
+-- Function to add accessories for a player
 local function addPlayerAccessories(player)
 	player.CharacterAdded:Connect(function(char)
-		task.wait(1) -- give time to load
+		task.wait(1)
 		for _, accessory in ipairs(char:GetChildren()) do
 			if accessory:IsA("Accessory") then
 				createAccessoryButton(accessory)
@@ -150,6 +209,22 @@ for _, player in ipairs(Players:GetPlayers()) do
 	addPlayerAccessories(player)
 end
 
--- Listen for new players
 Players.PlayerAdded:Connect(addPlayerAccessories)
 
+-- Close & minimize logic
+closeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+end)
+
+local minimized = false
+minimizeBtn.MouseButton1Click:Connect(function()
+	if minimized then
+		scrollingFrame.Visible = true
+		mainFrame.Size = UDim2.new(0, 450, 0, 350)
+		minimized = false
+	else
+		scrollingFrame.Visible = false
+		mainFrame.Size = UDim2.new(0, 450, 0, 50)
+		minimized = true
+	end
+end)
