@@ -231,11 +231,28 @@ local function createClothingButton(assetId, className, instance)
 
 	button.MouseButton1Click:Connect(function()
 		local character = LocalPlayer.Character
-		if character then
-			Core_Replication:FireServer("Tools", "Add", instance, character)
+		if not character then return end
+
+		-- Check for existing clothing of same type
+		if className == "Shirt" then
+			local old = character:FindFirstChildOfClass("Shirt")
+			if old and old ~= instance then
+				Core_Replication:FireServer("Tools", "Delete", old, character)
+				old:Destroy()
+			end
+		elseif className == "Pants" then
+			local old = character:FindFirstChildOfClass("Pants")
+			if old and old ~= instance then
+				Core_Replication:FireServer("Tools", "Delete", old, character)
+				old:Destroy()
+			end
 		end
+
+		-- Equip new
+		Core_Replication:FireServer("Tools", "Add", instance, character)
 	end)
 end
+
 
 local function addPlayerClothing(player)
 	local function scanClothing(char)
