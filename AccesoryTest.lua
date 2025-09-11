@@ -166,15 +166,17 @@ local function createAccessoryButton(accessory)
 	label.TextWrapped = true
 	label.Parent = button
 
-	-- Thumbnail
-	local success, info = pcall(function()
-		return MarketplaceService:GetProductInfo(accessory.AssetId)
-	end)
-
-	if success and info and info.AssetId then
-		button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", info.AssetId)
+	-- 🔹 Use mesh texture instead of Roblox asset thumbnails
+	local handle = accessory:FindFirstChild("Handle")
+	if handle then
+		local mesh = handle:FindFirstChildOfClass("SpecialMesh")
+		if mesh and mesh.TextureId ~= "" then
+			button.Image = mesh.TextureId
+		else
+			button.Image = "rbxassetid://0" -- fallback
+		end
 	else
-		button.Image = "rbxassetid://0"
+		button.Image = "rbxassetid://0" -- fallback
 	end
 
 	button.MouseButton1Click:Connect(function()
@@ -184,6 +186,7 @@ local function createAccessoryButton(accessory)
 		end
 	end)
 end
+
 
 local function addPlayerAccessories(player)
 	local function scan(char)
