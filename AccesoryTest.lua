@@ -89,10 +89,13 @@ minimizeCorner.Parent = minimizeBtn
 local scrollingFrame = Instance.new("ScrollingFrame")
 scrollingFrame.Size = UDim2.new(1, -20, 1, -55)
 scrollingFrame.Position = UDim2.new(0, 10, 0, 45)
-scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+scrollingFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- initial; AutomaticCanvasSize will control it
 scrollingFrame.ScrollBarThickness = 8
 scrollingFrame.BackgroundTransparency = 1
 scrollingFrame.BorderSizePixel = 0
+scrollingFrame.Active = true -- helps ensure mouse-wheel works
+-- Let Roblox automatically set canvas height based on content
+scrollingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 scrollingFrame.Parent = mainFrame
 
 local padding = Instance.new("UIPadding")
@@ -102,6 +105,7 @@ padding.PaddingLeft = UDim.new(0, 5)
 padding.PaddingRight = UDim.new(0, 5)
 padding.Parent = scrollingFrame
 
+-- UIGridLayout (must be direct child of ScrollingFrame for AutomaticCanvasSize to work)
 local uiGrid = Instance.new("UIGridLayout")
 uiGrid.CellSize = UDim2.new(0, 100, 0, 110)
 uiGrid.CellPadding = UDim2.new(0, 10, 0, 10)
@@ -109,7 +113,7 @@ uiGrid.FillDirectionMaxCells = 4
 uiGrid.SortOrder = Enum.SortOrder.LayoutOrder
 uiGrid.Parent = scrollingFrame
 
--- Make scrolling work automatically
+-- (Optional) keep CanvasSize updated as a fallback (won't hurt)
 uiGrid:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
 	scrollingFrame.CanvasSize = UDim2.new(0, uiGrid.AbsoluteContentSize.X, 0, uiGrid.AbsoluteContentSize.Y)
 end)
@@ -144,6 +148,7 @@ local function createAccessoryButton(accessory)
 	imageButton.Position = UDim2.new(0, 5, 0, 5)
 	imageButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 	imageButton.Parent = button
+	imageButton.ScaleType = Enum.ScaleType.Fit -- keeps image aspect ratio and looks better
 
 	local imgCorner = Instance.new("UICorner")
 	imgCorner.CornerRadius = UDim.new(0, 8)
@@ -151,13 +156,21 @@ local function createAccessoryButton(accessory)
 
 	-- Try to get Roblox catalog thumbnail
 	local success, info = pcall(function()
+		-- Some accessories (created in Studio) might not have AssetId; pcall prevents errors
 		return MarketplaceService:GetProductInfo(accessory.AssetId)
 	end)
 
 	if success and info and info.AssetId then
 		imageButton.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", info.AssetId)
 	else
-		imageButton.Image = "rbxassetid://0" -- fallback
+		-- Fallback: try special mesh texture, otherwise default placeholder
+		local handle = accessory:FindFirstChild("Handle")
+		local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
+		if mesh and mesh.TextureId and mesh.TextureId ~= "" then
+			imageButton.Image = mesh.TextureId
+		else
+			imageButton.Image = "rbxassetid://0"
+		end
 	end
 
 	-- Label for accessory name
@@ -233,3 +246,4 @@ minimizeBtn.MouseButton1Click:Connect(function()
 		minimized = true
 	end
 end)
+
