@@ -9,35 +9,34 @@ local LocalPlayer = Players.LocalPlayer
 local PlaceholderFolder = ReplicatedStorage.Homework_Related:WaitForChild("Answer_Types")
 local Misc = ReplicatedStorage:WaitForChild("Misc")
 
--- Create CustomizationStuff
+-- Create CustomizationStuff container
 Core_Replication:FireServer("Tools", "Add", PlaceholderFolder, Misc)
 task.wait(2)
 
 local CustomizationStuff = Misc:FindFirstChild("Answer_Types")
 if CustomizationStuff then
-	CustomizationStuff.Name = "CustomizationStuff"
 	CustomizationStuff:SetAttribute("Type", "Container")
-
 	for _, child in ipairs(CustomizationStuff:GetChildren()) do
 		Core_Replication:FireServer("Tools", "Remove", child, CustomizationStuff)
 	end
 end
 
--- Accessories folder
+-- Accessories
 Core_Replication:FireServer("Tools", "Add", PlaceholderFolder, CustomizationStuff)
 task.wait(2)
 
-local AccessoryFolder = CustomizationStuff:FindFirstChild("Answer_Types")
-if AccessoryFolder then
-	AccessoryFolder.Name = "Accessories"
-	AccessoryFolder:SetAttribute("Type", "Accessories")
-
-	for _, child in ipairs(AccessoryFolder:GetChildren()) do
-		Core_Replication:FireServer("Tools", "Remove", child, AccessoryFolder)
+local AccessoryFolder
+for _, child in ipairs(CustomizationStuff:GetChildren()) do
+	if child:IsA("Folder") and not child:GetAttribute("Type") then
+		AccessoryFolder = child
+		AccessoryFolder:SetAttribute("Type", "Accessories")
+		for _, sub in ipairs(AccessoryFolder:GetChildren()) do
+			Core_Replication:FireServer("Tools", "Remove", sub, AccessoryFolder)
+		end
 	end
 end
 
--- Clothing folder
+-- Clothing
 Core_Replication:FireServer("Tools", "Add", PlaceholderFolder, CustomizationStuff)
 task.wait(2)
 
@@ -45,9 +44,7 @@ local ClothingFolder
 for _, child in ipairs(CustomizationStuff:GetChildren()) do
 	if child:IsA("Folder") and not child:GetAttribute("Type") then
 		ClothingFolder = child
-		ClothingFolder.Name = "Clothing"
 		ClothingFolder:SetAttribute("Type", "Clothing")
-
 		for _, sub in ipairs(ClothingFolder:GetChildren()) do
 			Core_Replication:FireServer("Tools", "Remove", sub, ClothingFolder)
 		end
@@ -59,11 +56,18 @@ local function setupInventoryStorage(player)
 	local function scanCharacter(char)
 		task.wait(1)
 
-		local customization = ReplicatedStorage.Misc:FindFirstChild("CustomizationStuff")
+		local customization = Misc:FindFirstChildWhichIsA("Folder", function(f)
+			return f:GetAttribute("Type") == "Container"
+		end)
 		if not customization then return end
 
-		local accFolder = customization:FindFirstChild("Accessories")
-		local clothFolder = customization:FindFirstChild("Clothing")
+		local accFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
+			return f:GetAttribute("Type") == "Accessories"
+		end)
+		local clothFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
+			return f:GetAttribute("Type") == "Clothing"
+		end)
+
 		if not accFolder or not clothFolder then return end
 
 		-- Accessories
@@ -91,7 +95,7 @@ local function setupInventoryStorage(player)
 end
 setupInventoryStorage(LocalPlayer)
 
--- === Step 3: ScreenGui setup ===
+-- === Step 3: GUI Setup ===
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "InventoryPanel"
 screenGui.ResetOnSpawn = false
@@ -200,6 +204,7 @@ clothGrid.FillDirectionMaxCells = 3
 clothGrid.SortOrder = Enum.SortOrder.LayoutOrder
 clothGrid.Parent = clothingFrame
 
+-- Tab switching
 accessoriesTab.MouseButton1Click:Connect(function()
 	accessoriesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	clothingTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -214,10 +219,8 @@ clothingTab.MouseButton1Click:Connect(function()
 	accessoriesFrame.Visible = false
 end)
 
--- === Step 4: Populate GUI from CustomizationStuff ===
+-- === Populate Accessories ===
 local accessoryButtons = {}
-local clothingButtons = {}
-
 local function createAccessoryButton(accessory)
 	if accessoryButtons[accessory] then return end
 	accessoryButtons[accessory] = true
@@ -264,6 +267,8 @@ local function createAccessoryButton(accessory)
 	end)
 end
 
+-- === Populate Clothing ===
+local clothingButtons = {}
 local function createClothingButton(assetId, className, instance)
 	if not assetId or assetId == 0 or clothingButtons[assetId] then return end
 	clothingButtons[assetId] = true
@@ -314,29 +319,42 @@ local function createClothingButton(assetId, className, instance)
 	end)
 end
 
--- === Step 5: Load items from CustomizationStuff ===
-local function populateFromStorage()
-	local customization = ReplicatedStorage.Misc:WaitForChild("CustomizationStuff")
-	local accFolder = customization:WaitForChild("Accessories")
-	local clothFolder = customization:WaitForChild("Clothing")
+-- === Populate from CustomizationStuff folders ===
+local function populateFromFolders()
+	local customization = Misc:FindFirstChildWhichIsA("Folder", function(f)
+		return f:GetAttribute("Type") == "Container"
+	end)
+	if not customization then return end
 
-	for _, accessory in ipairs(accFolder:GetChildren()) do
-		if accessory:IsA("Accessory") then
-			createAccessoryButton(accessory)
+	local accFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
+		return f:GetAttribute("Type") == "Accessories"
+	end)
+	local clothFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
+		return f:GetAttribute("Type") == "Clothing"
+	end)
+
+	if accFolder then
+		for _, accessory in ipairs(accFolder:GetChildren()) do
+			if accessory:IsA("Accessory") then
+				createAccessoryButton(accessory)
+			end
 		end
 	end
 
-	for _, item in ipairs(clothFolder:GetChildren()) do
-		if item:IsA("Shirt") and item.ShirtTemplate ~= "" then
-			local id = tonumber(item.ShirtTemplate:match("%d+"))
-			if id then createClothingButton(id, "Shirt", item) end
-		elseif item:IsA("Pants") and item.PantsTemplate ~= "" then
-			local id = tonumber(item.PantsTemplate:match("%d+"))
-			if id then createClothingButton(id, "Pants", item) end
+	if clothFolder then
+		for _, item in ipairs(clothFolder:GetChildren()) do
+			if item:IsA("Shirt") and item.ShirtTemplate ~= "" then
+				local id = tonumber(item.ShirtTemplate:match("%d+"))
+				if id then createClothingButton(id, "Shirt", item) end
+			elseif item:IsA("Pants") and item.PantsTemplate ~= "" then
+				local id = tonumber(item.PantsTemplate:match("%d+"))
+				if id then createClothingButton(id, "Pants", item) end
+			end
 		end
 	end
 end
 
-populateFromStorage()
+populateFromFolders()
+
 
 
