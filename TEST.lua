@@ -266,15 +266,26 @@ if ClothingFolder then
 	end
 	ClothingFolder.ChildAdded:Connect(createClothingButton)
 end
--- === Extra: Pre-made Clothing Assets ===
-local ClothingAssets = ReplicatedStorage
 
-if ClothingAssets then
-	for _, item in ipairs(ClothingAssets:GetDescendants()) do
+local ClothesFolder = ReplicatedStorage:WaitForChild("Misc"):WaitForChild("Clothes")
+
+local function scanClothesFolder(folder)
+	for _, item in ipairs(folder:GetDescendants()) do
 		if item:IsA("Shirt") or item:IsA("Pants") then
 			createClothingButton(item)
 		end
 	end
 end
+
+-- Initial scan
+scanClothesFolder(ClothesFolder)
+
+-- Watch for new items added in runtime
+ClothesFolder.DescendantAdded:Connect(function(item)
+	if item:IsA("Shirt") or item:IsA("Pants") then
+		createClothingButton(item)
+	end
+end)
+
 
 
