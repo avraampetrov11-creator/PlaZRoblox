@@ -1,5 +1,4 @@
 -- LocalScript (StarterPlayerScripts)
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Core_Replication = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Core_Replication")
@@ -84,22 +83,20 @@ screenGui.ResetOnSpawn = false
 screenGui.IgnoreGuiInset = true
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
-local mainFrame = Instance.new("Frame")
+local mainFrame = Instance.new("Frame", screenGui)
 mainFrame.Size = UDim2.new(0, 500, 0, 400)
 mainFrame.Position = UDim2.new(0, 20, 0, 100)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Active = true
 mainFrame.Draggable = true
-mainFrame.Parent = screenGui
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
-local titleBar = Instance.new("Frame")
+local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 titleBar.BorderSizePixel = 0
-titleBar.Parent = mainFrame
 
-local title = Instance.new("TextLabel")
+local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, -140, 1, 0)
 title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
@@ -108,25 +105,22 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 20
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextXAlignment = Enum.TextXAlignment.Left
-title.Parent = titleBar
 
 -- Tabs
-local tabBar = Instance.new("Frame")
+local tabBar = Instance.new("Frame", mainFrame)
 tabBar.Size = UDim2.new(1, 0, 0, 35)
 tabBar.Position = UDim2.new(0, 0, 0, 40)
 tabBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-tabBar.Parent = mainFrame
 
-local accessoriesTab = Instance.new("TextButton")
+local accessoriesTab = Instance.new("TextButton", tabBar)
 accessoriesTab.Size = UDim2.new(0.5, 0, 1, 0)
 accessoriesTab.Text = "Accessories"
 accessoriesTab.Font = Enum.Font.GothamBold
 accessoriesTab.TextSize = 16
 accessoriesTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 accessoriesTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-accessoriesTab.Parent = tabBar
 
-local clothingTab = Instance.new("TextButton")
+local clothingTab = Instance.new("TextButton", tabBar)
 clothingTab.Size = UDim2.new(0.5, 0, 1, 0)
 clothingTab.Position = UDim2.new(0.5, 0, 0, 0)
 clothingTab.Text = "Clothing"
@@ -134,33 +128,28 @@ clothingTab.Font = Enum.Font.GothamBold
 clothingTab.TextSize = 16
 clothingTab.TextColor3 = Color3.fromRGB(255, 255, 255)
 clothingTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-clothingTab.Parent = tabBar
 
-local contentFrame = Instance.new("Frame")
+local contentFrame = Instance.new("Frame", mainFrame)
 contentFrame.Size = UDim2.new(1, 0, 1, -75)
 contentFrame.Position = UDim2.new(0, 0, 0, 75)
 contentFrame.BackgroundTransparency = 1
-contentFrame.Parent = mainFrame
 
 -- Accessories Frame
-local accessoriesFrame = Instance.new("ScrollingFrame")
+local accessoriesFrame = Instance.new("ScrollingFrame", contentFrame)
 accessoriesFrame.Size = UDim2.new(1, -20, 1, -10)
 accessoriesFrame.Position = UDim2.new(0, 10, 0, 5)
 accessoriesFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 accessoriesFrame.ScrollBarThickness = 8
 accessoriesFrame.BackgroundTransparency = 1
 accessoriesFrame.Active = true
-accessoriesFrame.Parent = contentFrame
 
-local accGrid = Instance.new("UIGridLayout")
-accGrid.CellSize = UDim2.new(0, 100, 0, 110)
+local accGrid = Instance.new("UIGridLayout", accessoriesFrame)
+accGrid.CellSize = UDim2.new(0, 100, 0, 100)
 accGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 accGrid.FillDirectionMaxCells = 4
-accGrid.SortOrder = Enum.SortOrder.LayoutOrder
-accGrid.Parent = accessoriesFrame
 
 -- Clothing Frame
-local clothingFrame = Instance.new("ScrollingFrame")
+local clothingFrame = Instance.new("ScrollingFrame", contentFrame)
 clothingFrame.Size = UDim2.new(1, -20, 1, -10)
 clothingFrame.Position = UDim2.new(0, 10, 0, 5)
 clothingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
@@ -168,14 +157,11 @@ clothingFrame.ScrollBarThickness = 8
 clothingFrame.BackgroundTransparency = 1
 clothingFrame.Active = true
 clothingFrame.Visible = false
-clothingFrame.Parent = contentFrame
 
-local clothGrid = Instance.new("UIGridLayout")
-clothGrid.CellSize = UDim2.new(0, 120, 0, 150)
+local clothGrid = Instance.new("UIGridLayout", clothingFrame)
+clothGrid.CellSize = UDim2.new(0, 120, 0, 120)
 clothGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 clothGrid.FillDirectionMaxCells = 3
-clothGrid.SortOrder = Enum.SortOrder.LayoutOrder
-clothGrid.Parent = clothingFrame
 
 -- Tab switching
 accessoriesTab.MouseButton1Click:Connect(function()
@@ -196,39 +182,24 @@ end)
 local function createAccessoryButton(accessory)
 	if not accessory:IsA("Accessory") then return end
 
-	local button = Instance.new("ImageButton")
-	button.Size = UDim2.new(0, 100, 0, 110)
+	local button = Instance.new("ImageButton", accessoriesFrame)
+	button.Size = UDim2.new(0, 100, 0, 100)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	button.Name = accessory.Name
 	button.ScaleType = Enum.ScaleType.Fit
-	button.Parent = accessoriesFrame
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
 
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 10)
-	corner.Parent = button
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -10, 0, 20)
-	label.Position = UDim2.new(0, 5, 1, -25)
-	label.BackgroundTransparency = 1
-	label.Text = accessory.Name
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(220, 220, 220)
-	label.TextWrapped = true
-	label.Parent = button
-
-	-- Try to use mesh texture
+	-- Mesh texture preview
 	local handle = accessory:FindFirstChild("Handle")
 	if handle then
 		local mesh = handle:FindFirstChildOfClass("SpecialMesh")
 		if mesh and mesh.TextureId ~= "" then
 			button.Image = mesh.TextureId
 		else
-			button.Image = "rbxassetid://0" -- fallback
+			button.Image = "rbxassetid://0"
 		end
 	else
-		button.Image = "rbxassetid://0" -- fallback
+		button.Image = "rbxassetid://0"
 	end
 
 	button.MouseButton1Click:Connect(function()
@@ -239,25 +210,49 @@ local function createAccessoryButton(accessory)
 	end)
 end
 
-
 local function createClothingButton(item)
 	if not (item:IsA("Shirt") or item:IsA("Pants")) then return end
 
-	local button = Instance.new("TextButton")
-	button.Size = UDim2.new(0, 120, 0, 150)
+	local button = Instance.new("ImageButton", clothingFrame)
+	button.Size = UDim2.new(0, 120, 0, 120)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	button.Text = item.ClassName
-	button.TextColor3 = Color3.new(1,1,1)
-	button.Parent = clothingFrame
+	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
+
+	-- Thumbnail preview
+	local id
+	if item:IsA("Shirt") then
+		id = tonumber(item.ShirtTemplate:match("%d+"))
+	elseif item:IsA("Pants") then
+		id = tonumber(item.PantsTemplate:match("%d+"))
+	end
+	if id then
+		button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", id)
+	else
+		button.Image = "rbxassetid://0"
+	end
 
 	button.MouseButton1Click:Connect(function()
 		local char = LocalPlayer.Character
 		if not char then return end
+
+		-- Remove old of same type
+		if item:IsA("Shirt") then
+			local old = char:FindFirstChildOfClass("Shirt")
+			if old and old ~= item then
+				Core_Replication:FireServer("Tools", "Remove", old, char)
+			end
+		elseif item:IsA("Pants") then
+			local old = char:FindFirstChildOfClass("Pants")
+			if old and old ~= item then
+				Core_Replication:FireServer("Tools", "Remove", old, char)
+			end
+		end
+
 		Core_Replication:FireServer("Tools", "Add", item, char)
 	end)
 end
 
--- Watch for new accessories/clothing being stored
+-- Watch for stored items
 if AccessoryFolder then
 	for _, child in ipairs(AccessoryFolder:GetChildren()) do
 		createAccessoryButton(child)
@@ -271,6 +266,5 @@ if ClothingFolder then
 	end
 	ClothingFolder.ChildAdded:Connect(createClothingButton)
 end
-
 
 
