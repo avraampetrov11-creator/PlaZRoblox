@@ -9,7 +9,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlaceholderFolder = ReplicatedStorage.Homework_Related:WaitForChild("Answer_Types")
 local Misc = ReplicatedStorage:WaitForChild("Misc")
 
--- Create CustomizationStuff container
+-- Create main container
 Core_Replication:FireServer("Tools", "Add", PlaceholderFolder, Misc)
 task.wait(2)
 
@@ -21,10 +21,9 @@ if CustomizationStuff then
 	end
 end
 
--- Accessories
+-- Create Accessories
 Core_Replication:FireServer("Tools", "Add", PlaceholderFolder, CustomizationStuff)
 task.wait(2)
-
 local AccessoryFolder
 for _, child in ipairs(CustomizationStuff:GetChildren()) do
 	if child:IsA("Folder") and not child:GetAttribute("Type") then
@@ -36,10 +35,9 @@ for _, child in ipairs(CustomizationStuff:GetChildren()) do
 	end
 end
 
--- Clothing
+-- Create Clothing
 Core_Replication:FireServer("Tools", "Add", PlaceholderFolder, CustomizationStuff)
 task.wait(2)
-
 local ClothingFolder
 for _, child in ipairs(CustomizationStuff:GetChildren()) do
 	if child:IsA("Folder") and not child:GetAttribute("Type") then
@@ -51,49 +49,33 @@ for _, child in ipairs(CustomizationStuff:GetChildren()) do
 	end
 end
 
--- === Step 2: Auto-store accessories & clothing on spawn ===
-local function setupInventoryStorage(player)
-	local function scanCharacter(char)
-		task.wait(1)
+-- === Step 2: Save Character Stuff ===
+local function saveCharacterStuff(char)
+	task.wait(1)
+	if not AccessoryFolder or not ClothingFolder then return end
 
-		local customization = Misc:FindFirstChildWhichIsA("Folder", function(f)
-			return f:GetAttribute("Type") == "Container"
-		end)
-		if not customization then return end
-
-		local accFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
-			return f:GetAttribute("Type") == "Accessories"
-		end)
-		local clothFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
-			return f:GetAttribute("Type") == "Clothing"
-		end)
-
-		if not accFolder or not clothFolder then return end
-
-		-- Accessories
-		for _, accessory in ipairs(char:GetChildren()) do
-			if accessory:IsA("Accessory") then
-				Core_Replication:FireServer("Tools", "Add", accessory, accFolder)
-			end
-		end
-
-		-- Shirt
-		local shirt = char:FindFirstChildOfClass("Shirt")
-		if shirt and shirt.ShirtTemplate ~= "" then
-			Core_Replication:FireServer("Tools", "Add", shirt, clothFolder)
-		end
-
-		-- Pants
-		local pants = char:FindFirstChildOfClass("Pants")
-		if pants and pants.PantsTemplate ~= "" then
-			Core_Replication:FireServer("Tools", "Add", pants, clothFolder)
+	-- Save accessories
+	for _, accessory in ipairs(char:GetChildren()) do
+		if accessory:IsA("Accessory") then
+			Core_Replication:FireServer("Tools", "Add", accessory, AccessoryFolder)
 		end
 	end
 
-	player.CharacterAdded:Connect(scanCharacter)
-	if player.Character then scanCharacter(player.Character) end
+	-- Save shirt
+	local shirt = char:FindFirstChildOfClass("Shirt")
+	if shirt and shirt.ShirtTemplate ~= "" then
+		Core_Replication:FireServer("Tools", "Add", shirt, ClothingFolder)
+	end
+
+	-- Save pants
+	local pants = char:FindFirstChildOfClass("Pants")
+	if pants and pants.PantsTemplate ~= "" then
+		Core_Replication:FireServer("Tools", "Add", pants, ClothingFolder)
+	end
 end
-setupInventoryStorage(LocalPlayer)
+
+LocalPlayer.CharacterAdded:Connect(saveCharacterStuff)
+if LocalPlayer.Character then saveCharacterStuff(LocalPlayer.Character) end
 
 -- === Step 3: GUI Setup ===
 local screenGui = Instance.new("ScreenGui")
@@ -109,16 +91,7 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Active = true
 mainFrame.Draggable = true
 mainFrame.Parent = screenGui
-
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 12)
-mainCorner.Parent = mainFrame
-
-local stroke = Instance.new("UIStroke")
-stroke.Thickness = 2
-stroke.Color = Color3.fromRGB(60, 60, 60)
-stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-stroke.Parent = mainFrame
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
 
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 40)
@@ -137,11 +110,11 @@ title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.TextXAlignment = Enum.TextXAlignment.Left
 title.Parent = titleBar
 
+-- Tabs
 local tabBar = Instance.new("Frame")
 tabBar.Size = UDim2.new(1, 0, 0, 35)
 tabBar.Position = UDim2.new(0, 0, 0, 40)
 tabBar.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-tabBar.BorderSizePixel = 0
 tabBar.Parent = mainFrame
 
 local accessoriesTab = Instance.new("TextButton")
@@ -169,10 +142,10 @@ contentFrame.Position = UDim2.new(0, 0, 0, 75)
 contentFrame.BackgroundTransparency = 1
 contentFrame.Parent = mainFrame
 
+-- Accessories Frame
 local accessoriesFrame = Instance.new("ScrollingFrame")
 accessoriesFrame.Size = UDim2.new(1, -20, 1, -10)
 accessoriesFrame.Position = UDim2.new(0, 10, 0, 5)
-accessoriesFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 accessoriesFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 accessoriesFrame.ScrollBarThickness = 8
 accessoriesFrame.BackgroundTransparency = 1
@@ -186,10 +159,10 @@ accGrid.FillDirectionMaxCells = 4
 accGrid.SortOrder = Enum.SortOrder.LayoutOrder
 accGrid.Parent = accessoriesFrame
 
+-- Clothing Frame
 local clothingFrame = Instance.new("ScrollingFrame")
 clothingFrame.Size = UDim2.new(1, -20, 1, -10)
 clothingFrame.Position = UDim2.new(0, 10, 0, 5)
-clothingFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
 clothingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 clothingFrame.ScrollBarThickness = 8
 clothingFrame.BackgroundTransparency = 1
@@ -219,142 +192,48 @@ clothingTab.MouseButton1Click:Connect(function()
 	accessoriesFrame.Visible = false
 end)
 
--- === Populate Accessories ===
-local accessoryButtons = {}
+-- === Build Buttons from Stored Items ===
 local function createAccessoryButton(accessory)
-	if accessoryButtons[accessory] then return end
-	accessoryButtons[accessory] = true
-
-	local button = Instance.new("ImageButton")
+	local button = Instance.new("TextButton")
 	button.Size = UDim2.new(0, 100, 0, 110)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	button.Name = accessory.Name
-	button.ScaleType = Enum.ScaleType.Fit
+	button.Text = accessory.Name
+	button.TextColor3 = Color3.new(1,1,1)
 	button.Parent = accessoriesFrame
 
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 10)
-	btnCorner.Parent = button
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -10, 0, 20)
-	label.Position = UDim2.new(0, 5, 1, -25)
-	label.BackgroundTransparency = 1
-	label.Text = accessory.Name
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(220, 220, 220)
-	label.TextWrapped = true
-	label.Parent = button
-
-	local handle = accessory:FindFirstChild("Handle")
-	if handle then
-		local mesh = handle:FindFirstChildOfClass("SpecialMesh")
-		if mesh and mesh.TextureId ~= "" then
-			button.Image = mesh.TextureId
-		else
-			button.Image = "rbxassetid://0"
-		end
-	else
-		button.Image = "rbxassetid://0"
-	end
-
 	button.MouseButton1Click:Connect(function()
-		local character = LocalPlayer.Character
-		if character then
-			Core_Replication:FireServer("Tools", "Add", accessory, character)
+		local char = LocalPlayer.Character
+		if char then
+			Core_Replication:FireServer("Tools", "Add", accessory, char)
 		end
 	end)
 end
 
--- === Populate Clothing ===
-local clothingButtons = {}
-local function createClothingButton(assetId, className, instance)
-	if not assetId or assetId == 0 or clothingButtons[assetId] then return end
-	clothingButtons[assetId] = true
-
-	local button = Instance.new("ImageButton")
+local function createClothingButton(item)
+	local button = Instance.new("TextButton")
 	button.Size = UDim2.new(0, 120, 0, 150)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	button.Name = tostring(assetId)
-	button.ScaleType = Enum.ScaleType.Fit
+	button.Text = item.ClassName
+	button.TextColor3 = Color3.new(1,1,1)
 	button.Parent = clothingFrame
 
-	local btnCorner = Instance.new("UICorner")
-	btnCorner.CornerRadius = UDim.new(0, 10)
-	btnCorner.Parent = button
-
-	local label = Instance.new("TextLabel")
-	label.Size = UDim2.new(1, -10, 0, 20)
-	label.Position = UDim2.new(0, 5, 1, -25)
-	label.BackgroundTransparency = 1
-	label.Text = className
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(220, 220, 220)
-	label.TextWrapped = true
-	label.Parent = button
-
-	button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", assetId)
-
 	button.MouseButton1Click:Connect(function()
-		local character = LocalPlayer.Character
-		if not character then return end
-
-		if className == "Shirt" then
-			local old = character:FindFirstChildOfClass("Shirt")
-			if old and old ~= instance then
-				Core_Replication:FireServer("Tools", "Remove", old, character)
-				old:Destroy()
-			end
-		elseif className == "Pants" then
-			local old = character:FindFirstChildOfClass("Pants")
-			if old and old ~= instance then
-				Core_Replication:FireServer("Tools", "Remove", old, character)
-				old:Destroy()
-			end
-		end
-
-		Core_Replication:FireServer("Tools", "Add", instance, character)
+		local char = LocalPlayer.Character
+		if not char then return end
+		Core_Replication:FireServer("Tools", "Add", item, char)
 	end)
 end
 
--- === Populate from CustomizationStuff folders ===
-local function populateFromFolders()
-	local customization = Misc:FindFirstChildWhichIsA("Folder", function(f)
-		return f:GetAttribute("Type") == "Container"
-	end)
-	if not customization then return end
-
-	local accFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
-		return f:GetAttribute("Type") == "Accessories"
-	end)
-	local clothFolder = customization:FindFirstChildWhichIsA("Folder", function(f)
-		return f:GetAttribute("Type") == "Clothing"
-	end)
-
-	if accFolder then
-		for _, accessory in ipairs(accFolder:GetChildren()) do
-			if accessory:IsA("Accessory") then
-				createAccessoryButton(accessory)
-			end
-		end
-	end
-
-	if clothFolder then
-		for _, item in ipairs(clothFolder:GetChildren()) do
-			if item:IsA("Shirt") and item.ShirtTemplate ~= "" then
-				local id = tonumber(item.ShirtTemplate:match("%d+"))
-				if id then createClothingButton(id, "Shirt", item) end
-			elseif item:IsA("Pants") and item.PantsTemplate ~= "" then
-				local id = tonumber(item.PantsTemplate:match("%d+"))
-				if id then createClothingButton(id, "Pants", item) end
-			end
-		end
+-- Populate from stored folders
+for _, child in ipairs(AccessoryFolder:GetChildren()) do
+	if child:IsA("Accessory") then
+		createAccessoryButton(child)
 	end
 end
-
-populateFromFolders()
-
+for _, item in ipairs(ClothingFolder:GetChildren()) do
+	if item:IsA("Shirt") or item:IsA("Pants") then
+		createClothingButton(item)
+	end
+end
 
 
