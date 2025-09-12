@@ -196,12 +196,40 @@ end)
 local function createAccessoryButton(accessory)
 	if not accessory:IsA("Accessory") then return end
 
-	local button = Instance.new("TextButton")
+	local button = Instance.new("ImageButton")
 	button.Size = UDim2.new(0, 100, 0, 110)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	button.Text = accessory.Name
-	button.TextColor3 = Color3.new(1,1,1)
+	button.Name = accessory.Name
+	button.ScaleType = Enum.ScaleType.Fit
 	button.Parent = accessoriesFrame
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = button
+
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.new(1, -10, 0, 20)
+	label.Position = UDim2.new(0, 5, 1, -25)
+	label.BackgroundTransparency = 1
+	label.Text = accessory.Name
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 12
+	label.TextColor3 = Color3.fromRGB(220, 220, 220)
+	label.TextWrapped = true
+	label.Parent = button
+
+	-- Try to use mesh texture
+	local handle = accessory:FindFirstChild("Handle")
+	if handle then
+		local mesh = handle:FindFirstChildOfClass("SpecialMesh")
+		if mesh and mesh.TextureId ~= "" then
+			button.Image = mesh.TextureId
+		else
+			button.Image = "rbxassetid://0" -- fallback
+		end
+	else
+		button.Image = "rbxassetid://0" -- fallback
+	end
 
 	button.MouseButton1Click:Connect(function()
 		local char = LocalPlayer.Character
@@ -210,6 +238,7 @@ local function createAccessoryButton(accessory)
 		end
 	end)
 end
+
 
 local function createClothingButton(item)
 	if not (item:IsA("Shirt") or item:IsA("Pants")) then return end
