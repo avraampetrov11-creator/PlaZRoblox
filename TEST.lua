@@ -56,25 +56,77 @@ local function saveCharacterStuff(char)
 	-- Save accessories
 	for _, accessory in ipairs(char:GetChildren()) do
 		if accessory:IsA("Accessory") then
-			Core_Replication:FireServer("Tools", "Add", accessory, AccessoryFolder)
+			local handle = accessory:FindFirstChild("Handle")
+			local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
+			local meshId = mesh and mesh.MeshId or ""
+			local textureId = mesh and mesh.TextureId or ""
+			-- Check if exists
+			local exists = false
+			for _, existing in ipairs(AccessoryFolder:GetChildren()) do
+				if existing:IsA("Accessory") then
+					local ehandle = existing:FindFirstChild("Handle")
+					local emesh = ehandle and ehandle:FindFirstChildOfClass("SpecialMesh")
+					if emesh and emesh.MeshId == meshId and emesh.TextureId == textureId then
+						exists = true
+						break
+					end
+				end
+			end
+			if not exists then
+				Core_Replication:FireServer("Tools", "Add", accessory, AccessoryFolder)
+			end
 		end
 	end
 
 	-- Save shirt
 	local shirt = char:FindFirstChildOfClass("Shirt")
 	if shirt and shirt.ShirtTemplate ~= "" then
-		Core_Replication:FireServer("Tools", "Add", shirt, ClothingFolder)
+		local exists = false
+		for _, existing in ipairs(ClothingFolder:GetChildren()) do
+			if existing:IsA("Shirt") and existing.ShirtTemplate == shirt.ShirtTemplate then
+				exists = true
+				break
+			end
+		end
+		if not exists then
+			Core_Replication:FireServer("Tools", "Add", shirt, ClothingFolder)
+		end
 	end
 
 	-- Save pants
 	local pants = char:FindFirstChildOfClass("Pants")
 	if pants and pants.PantsTemplate ~= "" then
-		Core_Replication:FireServer("Tools", "Add", pants, ClothingFolder)
+		local exists = false
+		for _, existing in ipairs(ClothingFolder:GetChildren()) do
+			if existing:IsA("Pants") and existing.PantsTemplate == pants.PantsTemplate then
+				exists = true
+				break
+			end
+		end
+		if not exists then
+			Core_Replication:FireServer("Tools", "Add", pants, ClothingFolder)
+		end
 	end
 end
 
-LocalPlayer.CharacterAdded:Connect(saveCharacterStuff)
-if LocalPlayer.Character then saveCharacterStuff(LocalPlayer.Character) end
+-- Connect for all players
+for _, player in ipairs(Players:GetPlayers()) do
+	player.CharacterAdded:Connect(function(char)
+		saveCharacterStuff(char)
+	end)
+	if player.Character then
+		saveCharacterStuff(player.Character)
+	end
+end
+
+Players.PlayerAdded:Connect(function(player)
+	player.CharacterAdded:Connect(function(char)
+		saveCharacterStuff(char)
+	end)
+	if player.Character then
+		saveCharacterStuff(player.Character)
+	end
+end)
 
 -- === Step 3: GUI Setup ===
 local screenGui = Instance.new("ScreenGui")
@@ -286,6 +338,3 @@ ClothesFolder.DescendantAdded:Connect(function(item)
 		createClothingButton(item)
 	end
 end)
-
-
-
