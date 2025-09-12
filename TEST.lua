@@ -194,6 +194,8 @@ end)
 
 -- === Build Buttons from Stored Items ===
 local function createAccessoryButton(accessory)
+	if not accessory:IsA("Accessory") then return end
+
 	local button = Instance.new("TextButton")
 	button.Size = UDim2.new(0, 100, 0, 110)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -210,6 +212,8 @@ local function createAccessoryButton(accessory)
 end
 
 local function createClothingButton(item)
+	if not (item:IsA("Shirt") or item:IsA("Pants")) then return end
+
 	local button = Instance.new("TextButton")
 	button.Size = UDim2.new(0, 120, 0, 150)
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
@@ -224,16 +228,20 @@ local function createClothingButton(item)
 	end)
 end
 
--- Populate from stored folders
-for _, child in ipairs(AccessoryFolder:GetChildren()) do
-	if child:IsA("Accessory") then
+-- Watch for new accessories/clothing being stored
+if AccessoryFolder then
+	for _, child in ipairs(AccessoryFolder:GetChildren()) do
 		createAccessoryButton(child)
 	end
+	AccessoryFolder.ChildAdded:Connect(createAccessoryButton)
 end
-for _, item in ipairs(ClothingFolder:GetChildren()) do
-	if item:IsA("Shirt") or item:IsA("Pants") then
-		createClothingButton(item)
+
+if ClothingFolder then
+	for _, child in ipairs(ClothingFolder:GetChildren()) do
+		createClothingButton(child)
 	end
+	ClothingFolder.ChildAdded:Connect(createClothingButton)
 end
+
 
 
