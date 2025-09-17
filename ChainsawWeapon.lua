@@ -1,6 +1,6 @@
 return function(playerName)
     -- Define target player using the passed name
-    local target = workspace:WaitForChild("Players"):WaitForChild(playerName)
+    local target = workspace:WaitForChild("Players"):WaitForChild(playerName)  -- Adjust path if needed, e.g., workspace:WaitForChild(playerName)
 
     -- Add MeshPartAccessory.Handle.SpecialMesh to the target's Ruler.Handle
     game.ReplicatedStorage.Events.Core_Replication:FireServer(
