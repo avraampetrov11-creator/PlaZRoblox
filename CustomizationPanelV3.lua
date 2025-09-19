@@ -8,9 +8,9 @@ local UserInputService = game:GetService("UserInputService")
 -- === Helper Functions ===
 local function waitForChild(parent, childName, timeout)
 	timeout = timeout or 5
-	local start = os.clock()
+	local start = tick()
 	local child = parent:FindFirstChild(childName)
-	while not child and (os.clock() - start) < timeout do
+	while not child and (tick() - start) < timeout do
 		child = parent:FindFirstChild(childName)
 		task.wait(0.1)
 	end
@@ -64,64 +64,63 @@ if CustomizationStuff then
 end
 
 -- === Step 2: Save Character Stuff ===
-local function saveAccessory(accessory, AccessoryFolder)
-	if not accessory:IsA("Accessory") then return end
-	local handle = accessory:FindFirstChild("Handle")
-	local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
-	local meshId = mesh and mesh.MeshId or ""
-	local textureId = mesh and mesh.TextureId or ""
-	local exists = false
-	for _, existing in ipairs(AccessoryFolder:GetChildren()) do
-		if existing:IsA("Accessory") then
-			local ehandle = existing:FindFirstChild("Handle")
-			local emesh = ehandle and ehandle:FindFirstChildOfClass("SpecialMesh")
-			if emesh and emesh.MeshId == meshId and emesh.TextureId == textureId then
-				exists = true
-				break
-			end
-		end
-	end
-	if not exists then
-		safeFireServer("Tools", "Add", accessory, AccessoryFolder)
-	end
-end
-
-local function saveClothingItem(item, ClothingFolder)
-	if not (item:IsA("Shirt") or item:IsA("Pants")) then return end
-	local template = item:IsA("Shirt") and item.ShirtTemplate or item.PantsTemplate
-	if template == "" then return end
-	local exists = false
-	for _, existing in ipairs(ClothingFolder:GetChildren()) do
-		local exTemplate = existing:IsA("Shirt") and existing.ShirtTemplate or existing.PantsTemplate
-		if exTemplate == template then
-			exists = true
-			break
-		end
-	end
-	if not exists then
-		safeFireServer("Tools", "Add", item, ClothingFolder)
-	end
-end
-
 local function saveCharacterStuff(char, AccessoryFolder, ClothingFolder)
 	task.wait(1)  -- Short wait for character to fully load
 	if not AccessoryFolder or not ClothingFolder then return end
 
 	-- Save accessories
 	for _, accessory in ipairs(char:GetChildren()) do
-		saveAccessory(accessory, AccessoryFolder)
+		if accessory:IsA("Accessory") then
+			local handle = accessory:FindFirstChild("Handle")
+			local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
+			local meshId = mesh and mesh.MeshId or ""
+			local textureId = mesh and mesh.TextureId or ""
+			-- Check if exists
+			local exists = false
+			for _, existing in ipairs(AccessoryFolder:GetChildren()) do
+				if existing:IsA("Accessory") then
+					local ehandle = existing:FindFirstChild("Handle")
+					local emesh = ehandle and ehandle:FindFirstChildOfClass("SpecialMesh")
+					if emesh and emesh.MeshId == meshId and emesh.TextureId == textureId then
+						exists = true
+						break
+					end
+				end
+			end
+			if not exists then
+				safeFireServer("Tools", "Add", accessory, AccessoryFolder)
+			end
+		end
 	end
 
 	-- Save shirt
 	local shirt = char:FindFirstChildOfClass("Shirt")
-	if shirt then
-		saveClothingItem(shirt, ClothingFolder)
+	if shirt and shirt.ShirtTemplate ~= "" then
+		local exists = false
+		for _, existing in ipairs(ClothingFolder:GetChildren()) do
+			if existing:IsA("Shirt") and existing.ShirtTemplate == shirt.ShirtTemplate then
+				exists = true
+				break
+			end
+		end
+		if not exists then
+			safeFireServer("Tools", "Add", shirt, ClothingFolder)
+		end
 	end
 
 	-- Save pants
 	local pants = char:FindFirstChildOfClass("Pants")
-	if pants then
-		saveClothingItem(pants, ClothingFolder)
+	if pants and pants.PantsTemplate ~= "" then
+		local exists = false
+		for _, existing in ipairs(ClothingFolder:GetChildren()) do
+			if existing:IsA("Pants") and existing.PantsTemplate == pants.PantsTemplate then
+				exists = true
+				break
+			end
+		end
+		if not exists then
+			safeFireServer("Tools", "Add", pants, ClothingFolder)
+		end
 	end
 end
 
@@ -161,15 +160,41 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Active = true
 mainFrame.Draggable = true
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
+local uiGradient = Instance.new("UIGradient", mainFrame)
+uiGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 45))
+}
 
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 titleBar.BorderSizePixel = 0
+local titleGradient = Instance.new("UIGradient", titleBar)
+titleGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 50, 50))
+}
+
+-- Z Button (top left addon for removal menu)
+local zButton = Instance.new("TextButton", titleBar)
+zButton.Size = UDim2.new(0, 40, 0, 30)
+zButton.Position = UDim2.new(0, 5, 0, 5)
+zButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+zButton.Text = "Z"
+zButton.Font = Enum.Font.GothamBold
+zButton.TextSize = 20
+zButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", zButton).CornerRadius = UDim.new(0, 6)
+local zGradient = Instance.new("UIGradient", zButton)
+zGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 70, 70))
+}
 
 local title = Instance.new("TextLabel", titleBar)
-title.Size = UDim2.new(1, -140, 1, 0)
-title.Position = UDim2.new(0, 10, 0, 0)
+title.Size = UDim2.new(1, -180, 1, 0)
+title.Position = UDim2.new(0, 50, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Inventory"
 title.Font = Enum.Font.GothamBold
@@ -242,6 +267,7 @@ local function updatePlayersList()
 			playersListFrame.Visible = false
 		end)
 	end
+	playersGrid:ApplyLayout()
 end
 
 updatePlayersList()
@@ -253,6 +279,59 @@ targetButton.MouseButton1Click:Connect(function()
 	playersListFrame.Visible = not playersListFrame.Visible
 	if playersListFrame.Visible then
 		updatePlayersList()
+	end
+end)
+
+-- Removal Menu (for accessories, toggled by Z button)
+local removalFrame = Instance.new("ScrollingFrame", mainFrame)
+removalFrame.Size = UDim2.new(1, 0, 0, 150)
+removalFrame.Position = UDim2.new(0, 0, 0, 40)
+removalFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+removalFrame.Visible = false
+removalFrame.ScrollBarThickness = 6
+removalFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+removalFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local removalGradient = Instance.new("UIGradient", removalFrame)
+removalGradient.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(55, 55, 55))
+}
+
+local removalGrid = Instance.new("UIGridLayout", removalFrame)
+removalGrid.CellSize = UDim2.new(1, 0, 0, 30)
+removalGrid.CellPadding = UDim2.new(0, 0, 0, 5)
+
+local function updateRemovalList()
+	for _, child in ipairs(removalFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+	local char = targetPlayer.Character
+	if not char then return end
+	for _, accessory in ipairs(char:GetChildren()) do
+		if accessory:IsA("Accessory") then
+			local btn = Instance.new("TextButton", removalFrame)
+			btn.Text = "Remove: " .. accessory.Name
+			btn.Font = Enum.Font.Gotham
+			btn.TextSize = 16
+			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+			btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+			btn.MouseButton1Click:Connect(function()
+				safeFireServer("Tools", "Remove", accessory, char)
+				updateRemovalList()  -- Refresh list after removal
+			end)
+		end
+	end
+	removalGrid:ApplyLayout()
+end
+
+zButton.MouseButton1Click:Connect(function()
+	removalFrame.Visible = not removalFrame.Visible
+	if removalFrame.Visible then
+		updateRemovalList()
+		playersListFrame.Visible = false  -- Close other dropdown if open
 	end
 end)
 
@@ -284,38 +363,43 @@ contentFrame.Size = UDim2.new(1, 0, 1, -75)
 contentFrame.Position = UDim2.new(0, 0, 0, 75)
 contentFrame.BackgroundTransparency = 1
 
--- Adjust content position if players list is visible
-playersListFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+-- Adjust positions based on visible dropdowns
+local function updatePositions()
+	local offset = 40
 	if playersListFrame.Visible then
-		tabBar.Position = UDim2.new(0, 0, 0, 140)
-		contentFrame.Position = UDim2.new(0, 0, 0, 175)
-		contentFrame.Size = UDim2.new(1, 0, 1, -175)
-	else
-		tabBar.Position = UDim2.new(0, 0, 0, 40)
-		contentFrame.Position = UDim2.new(0, 0, 0, 75)
-		contentFrame.Size = UDim2.new(1, 0, 1, -75)
+		offset = offset + 100
 	end
-end)
+	if removalFrame.Visible then
+		offset = offset + 150
+	end
+	tabBar.Position = UDim2.new(0, 0, 0, offset)
+	contentFrame.Position = UDim2.new(0, 0, 0, offset + 35)
+	contentFrame.Size = UDim2.new(1, 0, 1, -(offset + 35))
+end
+
+playersListFrame:GetPropertyChangedSignal("Visible"):Connect(updatePositions)
+removalFrame:GetPropertyChangedSignal("Visible"):Connect(updatePositions)
+updatePositions()
 
 -- Accessories Frame
 local accessoriesFrame = Instance.new("ScrollingFrame", contentFrame)
-accessoriesFrame.Size = UDim2.new(1, -20, 1, -50)
-accessoriesFrame.Position = UDim2.new(0, 10, 0, 40)
+accessoriesFrame.Size = UDim2.new(1, -20, 1, -10)
+accessoriesFrame.Position = UDim2.new(0, 10, 0, 5)
 accessoriesFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 accessoriesFrame.ScrollBarThickness = 8
 accessoriesFrame.BackgroundTransparency = 1
 accessoriesFrame.Active = true
 
 local accGrid = Instance.new("UIGridLayout", accessoriesFrame)
-accGrid.CellSize = UDim2.new(0, 100, 0, 120)
+accGrid.CellSize = UDim2.new(0, 100, 0, 120)  -- Increased height for name
 accGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 accGrid.FillDirectionMaxCells = 4
 accGrid.SortOrder = Enum.SortOrder.Name
 
 -- Clothing Frame
 local clothingFrame = Instance.new("ScrollingFrame", contentFrame)
-clothingFrame.Size = UDim2.new(1, -20, 1, -50)
-clothingFrame.Position = UDim2.new(0, 10, 0, 40)
+clothingFrame.Size = UDim2.new(1, -20, 1, -10)
+clothingFrame.Position = UDim2.new(0, 10, 0, 5)
 clothingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 clothingFrame.ScrollBarThickness = 8
 clothingFrame.BackgroundTransparency = 1
@@ -323,103 +407,10 @@ clothingFrame.Active = true
 clothingFrame.Visible = false
 
 local clothGrid = Instance.new("UIGridLayout", clothingFrame)
-clothGrid.CellSize = UDim2.new(0, 120, 0, 140)
+clothGrid.CellSize = UDim2.new(0, 120, 0, 140)  -- Increased height if needed
 clothGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 clothGrid.FillDirectionMaxCells = 3
 clothGrid.SortOrder = Enum.SortOrder.Name
-
--- Search and Clear for Accessories
-local accessoriesSearch = Instance.new("TextBox", contentFrame)
-accessoriesSearch.Size = UDim2.new(1, -100, 0, 30)
-accessoriesSearch.Position = UDim2.new(0, 10, 0, 5)
-accessoriesSearch.PlaceholderText = "Search Accessories..."
-accessoriesSearch.Font = Enum.Font.Gotham
-accessoriesSearch.TextSize = 14
-accessoriesSearch.TextColor3 = Color3.fromRGB(255, 255, 255)
-accessoriesSearch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-Instance.new("UICorner", accessoriesSearch).CornerRadius = UDim.new(0, 6)
-
-local function filterAccessories(text)
-	text = text:lower()
-	for _, btn in ipairs(accessoriesFrame:GetChildren()) do
-		if btn:IsA("ImageButton") then
-			btn.Visible = (text == "" or btn.Name:lower():find(text))
-		end
-	end
-end
-
-accessoriesSearch:GetPropertyChangedSignal("Text"):Connect(function()
-	filterAccessories(accessoriesSearch.Text)
-end)
-
-local clearAccessories = Instance.new("TextButton", contentFrame)
-clearAccessories.Size = UDim2.new(0, 80, 0, 30)
-clearAccessories.Position = UDim2.new(1, -90, 0, 5)
-clearAccessories.Text = "Clear All"
-clearAccessories.Font = Enum.Font.GothamBold
-clearAccessories.TextSize = 14
-clearAccessories.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearAccessories.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-Instance.new("UICorner", clearAccessories).CornerRadius = UDim.new(0, 6)
-clearAccessories.MouseButton1Click:Connect(function()
-	local char = targetPlayer.Character
-	if char then
-		for _, acc in ipairs(char:GetChildren()) do
-			if acc:IsA("Accessory") then
-				safeFireServer("Tools", "Remove", acc, char)
-			end
-		end
-	end
-end)
-
--- Search and Clear for Clothing
-local clothingSearch = Instance.new("TextBox", contentFrame)
-clothingSearch.Size = UDim2.new(1, -100, 0, 30)
-clothingSearch.Position = UDim2.new(0, 10, 0, 5)
-clothingSearch.PlaceholderText = "Search Clothing..."
-clothingSearch.Font = Enum.Font.Gotham
-clothingSearch.TextSize = 14
-clothingSearch.TextColor3 = Color3.fromRGB(255, 255, 255)
-clothingSearch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-clothingSearch.Visible = false
-Instance.new("UICorner", clothingSearch).CornerRadius = UDim.new(0, 6)
-
-local function filterClothing(text)
-	text = text:lower()
-	for _, btn in ipairs(clothingFrame:GetChildren()) do
-		if btn:IsA("ImageButton") then
-			btn.Visible = (text == "" or btn.Name:lower():find(text))
-		end
-	end
-end
-
-clothingSearch:GetPropertyChangedSignal("Text"):Connect(function()
-	filterClothing(clothingSearch.Text)
-end)
-
-local clearClothing = Instance.new("TextButton", contentFrame)
-clearClothing.Size = UDim2.new(0, 80, 0, 30)
-clearClothing.Position = UDim2.new(1, -90, 0, 5)
-clearClothing.Text = "Clear All"
-clearClothing.Font = Enum.Font.GothamBold
-clearClothing.TextSize = 14
-clearClothing.TextColor3 = Color3.fromRGB(255, 255, 255)
-clearClothing.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-clearClothing.Visible = false
-Instance.new("UICorner", clearClothing).CornerRadius = UDim.new(0, 6)
-clearClothing.MouseButton1Click:Connect(function()
-	local char = targetPlayer.Character
-	if char then
-		local shirt = char:FindFirstChildOfClass("Shirt")
-		if shirt then
-			safeFireServer("Tools", "Remove", shirt, char)
-		end
-		local pants = char:FindFirstChildOfClass("Pants")
-		if pants then
-			safeFireServer("Tools", "Remove", pants, char)
-		end
-	end
-end)
 
 -- Tab switching
 accessoriesTab.MouseButton1Click:Connect(function()
@@ -427,10 +418,6 @@ accessoriesTab.MouseButton1Click:Connect(function()
 	clothingTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	accessoriesFrame.Visible = true
 	clothingFrame.Visible = false
-	accessoriesSearch.Visible = true
-	clearAccessories.Visible = true
-	clothingSearch.Visible = false
-	clearClothing.Visible = false
 end)
 
 clothingTab.MouseButton1Click:Connect(function()
@@ -438,10 +425,6 @@ clothingTab.MouseButton1Click:Connect(function()
 	accessoriesTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	clothingFrame.Visible = true
 	accessoriesFrame.Visible = false
-	accessoriesSearch.Visible = false
-	clearAccessories.Visible = false
-	clothingSearch.Visible = true
-	clearClothing.Visible = true
 end)
 
 -- === Build Buttons from Stored Items ===
@@ -452,6 +435,11 @@ local function createAccessoryButton(accessory)
 	button.Name = accessory.Name
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
+	local btnGradient = Instance.new("UIGradient", button)
+	btnGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
+	}
 
 	-- Improved preview using ViewportFrame for 3D render
 	local viewport = Instance.new("ViewportFrame", button)
@@ -466,17 +454,23 @@ local function createAccessoryButton(accessory)
 		camera.CFrame = CFrame.new(handle.Position + Vector3.new(0, 0, 3), handle.Position)
 	end
 
-	-- Label
-	local label = Instance.new("TextLabel", button)
-	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 0, 1, -20)
-	label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	label.Text = accessory.Name
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(255, 255, 255)
-	label.TextTruncate = Enum.TextTruncate.Split
-	Instance.new("UICorner", label).CornerRadius = UDim.new(0, 4)
+	-- Accessory name display
+	local nameLabel = Instance.new("TextLabel", button)
+	nameLabel.Size = UDim2.new(1, 0, 0, 20)
+	nameLabel.Position = UDim2.new(0, 0, 1, -20)
+	nameLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+	nameLabel.Text = accessory.Name
+	nameLabel.Font = Enum.Font.Gotham
+	nameLabel.TextSize = 14
+	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+	nameLabel.TextTruncate = Enum.TextTruncate.Split
+	nameLabel.TextWrapped = true
+	Instance.new("UICorner", nameLabel).CornerRadius = UDim.new(0, 10)
+	local nameGradient = Instance.new("UIGradient", nameLabel)
+	nameGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 50, 50))
+	}
 
 	button.MouseButton1Click:Connect(function()
 		local char = targetPlayer.Character
@@ -508,6 +502,8 @@ local function createAccessoryButton(accessory)
 			safeFireServer("Tools", "Add", accessory, char)
 		end
 	end)
+	
+	accGrid:ApplyLayout()
 end
 
 local function createClothingButton(item)
@@ -517,6 +513,11 @@ local function createClothingButton(item)
 	button.Name = item.Name
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
+	local btnGradient = Instance.new("UIGradient", button)
+	btnGradient.Color = ColorSequence.new{
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
+	}
 
 	-- Thumbnail preview
 	local id
@@ -526,18 +527,6 @@ local function createClothingButton(item)
 		id = tonumber(item.PantsTemplate:match("%d+")) or 0
 	end
 	button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", id)
-
-	-- Label
-	local label = Instance.new("TextLabel", button)
-	label.Size = UDim2.new(1, 0, 0, 20)
-	label.Position = UDim2.new(0, 0, 1, -20)
-	label.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	label.Text = item.Name
-	label.Font = Enum.Font.Gotham
-	label.TextSize = 12
-	label.TextColor3 = Color3.fromRGB(255, 255, 255)
-	label.TextTruncate = Enum.TextTruncate.Split
-	Instance.new("UICorner", label).CornerRadius = UDim.new(0, 4)
 
 	button.MouseButton1Click:Connect(function()
 		local char = targetPlayer.Character
@@ -552,6 +541,8 @@ local function createClothingButton(item)
 
 		safeFireServer("Tools", "Add", item, char)
 	end)
+	
+	clothGrid:ApplyLayout()
 end
 
 -- Watch for stored items
@@ -574,7 +565,19 @@ local ClothesFolder = Misc:WaitForChild("Clothes")
 
 local function scanClothesFolder(folder)
 	for _, item in ipairs(folder:GetDescendants()) do
-		saveClothingItem(item, ClothingFolder)
+		if item:IsA("Shirt") or item:IsA("Pants") then
+			-- Check if already in ClothingFolder to avoid duplicates
+			local exists = false
+			for _, existing in ipairs(clothingFrame:GetChildren()) do
+				if existing:IsA("ImageButton") and existing.Name == item.Name then
+					exists = true
+					break
+				end
+			end
+			if not exists then
+				createClothingButton(item)
+			end
+		end
 	end
 end
 
@@ -583,13 +586,19 @@ scanClothesFolder(ClothesFolder)
 
 -- Watch for new items added in runtime
 ClothesFolder.DescendantAdded:Connect(function(item)
-	saveClothingItem(item, ClothingFolder)
+	if item:IsA("Shirt") or item:IsA("Pants") then
+		createClothingButton(item)
+	end
 end)
 
--- Toggle GUI with hotkey 'I'
+-- Toggle GUI with hotkey (e.g., 'E')
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.E then
 		screenGui.Enabled = not screenGui.Enabled
+		if screenGui.Enabled then
+			removalFrame.Visible = false
+			playersListFrame.Visible = false
+		end
 	end
 end)
