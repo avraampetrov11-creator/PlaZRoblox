@@ -361,7 +361,7 @@ local function createAccessoryButton(accessory)
 	viewport.CurrentCamera = camera
 	local handle = clone:FindFirstChild("Handle")
 	if handle then
-		camera.CFrame = CFrame.new(handle.Position + Vector3.new(0, 0, 5), handle.Position)
+		camera.CFrame = CFrame.new(handle.Position + Vector3.new(0, 0, 3), handle.Position)
 	end
 
 	button.MouseButton1Click:Connect(function()
