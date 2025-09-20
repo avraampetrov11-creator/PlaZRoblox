@@ -533,39 +533,47 @@ local function scanClothesFolder(folder)
 		preloadedFolder = waitForChild(ClothingFolder, "Answer_Types")
 		if preloadedFolder then
 			preloadedFolder.Name = "Preloaded"
+		else
+			warn("Failed to create Preloaded folder")
+			return
 		end
 	end
 
-	if preloadedFolder then
-    	local fromCharacter = folder.Name
-    	local charFolder = preloadedFolder:FindFirstChild(fromCharacter)
-    	if not charFolder then
-        	safeFireServer("Tools", "Add", PlaceholderFolder, preloadedFolder)
-        	charFolder = waitForChild(preloadedFolder, "Answer_Types")
-        	if charFolder then
-            	charFolder.Name = fromCharacter
-        	end
-    	end
+	-- Create or get character-specific subfolder
+	local fromCharacter = folder.Name
+	local charFolder = preloadedFolder:FindFirstChild(fromCharacter)
+	if not charFolder then
+		safeFireServer("Tools", "Add", PlaceholderFolder, preloadedFolder)
+		charFolder = waitForChild(preloadedFolder, "Answer_Types")
+		if charFolder then
+			charFolder.Name = fromCharacter
+		else
+			warn("Failed to create charFolder for " .. fromCharacter)
+			return
+		end
+	end
 
-    	if charFolder then
-        	for _, item in ipairs(folder:GetDescendants()) do
-            	if item:IsA("Shirt") or item:IsA("Pants") then
-                	local exists = false
-                	for _, existing in ipairs(charFolder:GetChildren()) do
-                    	if item:IsA("Shirt") and existing:IsA("Shirt") and existing.ShirtTemplate == item.ShirtTemplate then
-                        	exists = true
-                        	break
-                    	elseif item:IsA("Pants") and existing:IsA("Pants") and existing.PantsTemplate == item.PantsTemplate then
-                        	exists = true
-                        	break
-                    	end
-                	end
-                	if not exists then
-                    	safeFireServer("Tools", "Add", item, charFolder)
-                	end
-            	end
-        	end
-    	end
+	-- Add shirts/pants into charFolder
+	for _, item in ipairs(folder:GetDescendants()) do
+		if item:IsA("Shirt") or item:IsA("Pants") then
+			local exists = false
+			for _, existing in ipairs(charFolder:GetChildren()) do
+				if item:IsA("Shirt") and existing:IsA("Shirt") then
+					if existing.ShirtTemplate == item.ShirtTemplate then
+						exists = true
+						break
+					end
+				elseif item:IsA("Pants") and existing:IsA("Pants") then
+					if existing.PantsTemplate == item.PantsTemplate then
+						exists = true
+						break
+					end
+				end
+			end
+			if not exists then
+				safeFireServer("Tools", "Add", item, charFolder)
+			end
+		end
 	end
 end
 
