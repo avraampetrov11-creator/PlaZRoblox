@@ -189,45 +189,45 @@ closeButton.MouseButton1Click:Connect(function()
 	screenGui.Enabled = false
 end)
 
--- Target Player Selector
-local targetPlayer = LocalPlayer
-local targetLabel = Instance.new("TextLabel", titleBar)
-targetLabel.Size = UDim2.new(0, 140, 1, 0)
-targetLabel.Position = UDim2.new(1, -180, 0, 0)
-targetLabel.BackgroundTransparency = 1
-targetLabel.Text = "Target: " .. LocalPlayer.Name
-targetLabel.Font = Enum.Font.Gotham
-targetLabel.TextSize = 16
-targetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-targetLabel.TextXAlignment = Enum.TextXAlignment.Right
+-- Target Player Selector for Main GUI
+local mainTargetPlayer = LocalPlayer
+local mainTargetLabel = Instance.new("TextLabel", titleBar)
+mainTargetLabel.Size = UDim2.new(0, 140, 1, 0)
+mainTargetLabel.Position = UDim2.new(1, -180, 0, 0)
+mainTargetLabel.BackgroundTransparency = 1
+mainTargetLabel.Text = "Target: " .. LocalPlayer.Name
+mainTargetLabel.Font = Enum.Font.Gotham
+mainTargetLabel.TextSize = 16
+mainTargetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+mainTargetLabel.TextXAlignment = Enum.TextXAlignment.Right
 
-local targetButton = Instance.new("TextButton", titleBar)
-targetButton.Size = UDim2.new(0, 140, 1, 0)
-targetButton.Position = UDim2.new(1, -180, 0, 0)
-targetButton.BackgroundTransparency = 1
-targetButton.Text = ""
+local mainTargetButton = Instance.new("TextButton", titleBar)
+mainTargetButton.Size = UDim2.new(0, 140, 1, 0)
+mainTargetButton.Position = UDim2.new(1, -180, 0, 0)
+mainTargetButton.BackgroundTransparency = 1
+mainTargetButton.Text = ""
 
-local playersListFrame = Instance.new("ScrollingFrame", mainFrame)
-playersListFrame.Size = UDim2.new(1, 0, 0, 100)
-playersListFrame.Position = UDim2.new(0, 0, 0, 40)
-playersListFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-playersListFrame.Visible = false
-playersListFrame.ScrollBarThickness = 6
-playersListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-playersListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+local mainPlayersListFrame = Instance.new("ScrollingFrame", mainFrame)
+mainPlayersListFrame.Size = UDim2.new(1, 0, 0, 100)
+mainPlayersListFrame.Position = UDim2.new(0, 0, 0, 40)
+mainPlayersListFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+mainPlayersListFrame.Visible = false
+mainPlayersListFrame.ScrollBarThickness = 6
+mainPlayersListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+mainPlayersListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-local playersGrid = Instance.new("UIGridLayout", playersListFrame)
-playersGrid.CellSize = UDim2.new(1, 0, 0, 30)
-playersGrid.CellPadding = UDim2.new(0, 0, 0, 5)
+local mainPlayersGrid = Instance.new("UIGridLayout", mainPlayersListFrame)
+mainPlayersGrid.CellSize = UDim2.new(1, 0, 0, 30)
+mainPlayersGrid.CellPadding = UDim2.new(0, 0, 0, 5)
 
-local function updatePlayersList()
-	for _, child in ipairs(playersListFrame:GetChildren()) do
+local function updateMainPlayersList()
+	for _, child in ipairs(mainPlayersListFrame:GetChildren()) do
 		if child:IsA("TextButton") then
 			child:Destroy()
 		end
 	end
 	for _, player in ipairs(Players:GetPlayers()) do
-		local btn = Instance.new("TextButton", playersListFrame)
+		local btn = Instance.new("TextButton", mainPlayersListFrame)
 		btn.Text = player.Name
 		btn.Font = Enum.Font.Gotham
 		btn.TextSize = 16
@@ -235,23 +235,23 @@ local function updatePlayersList()
 		btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
 		btn.MouseButton1Click:Connect(function()
-			targetPlayer = player
-			targetLabel.Text = "Target: " .. player.Name
-			playersListFrame.Visible = false
+			mainTargetPlayer = player
+			mainTargetLabel.Text = "Target: " .. player.Name
+			mainPlayersListFrame.Visible = false
 		end)
 	end
-	playersGrid:ApplyLayout()
+	mainPlayersGrid:ApplyLayout()
 end
 
-updatePlayersList()
+updateMainPlayersList()
 
-Players.PlayerAdded:Connect(updatePlayersList)
-Players.PlayerRemoving:Connect(updatePlayersList)
+Players.PlayerAdded:Connect(updateMainPlayersList)
+Players.PlayerRemoving:Connect(updateMainPlayersList)
 
-targetButton.MouseButton1Click:Connect(function()
-	playersListFrame.Visible = not playersListFrame.Visible
-	if playersListFrame.Visible then
-		updatePlayersList()
+mainTargetButton.MouseButton1Click:Connect(function()
+	mainPlayersListFrame.Visible = not mainPlayersListFrame.Visible
+	if mainPlayersListFrame.Visible then
+		updateMainPlayersList()
 	end
 end)
 
@@ -284,8 +284,8 @@ contentFrame.Position = UDim2.new(0, 0, 0, 75)
 contentFrame.BackgroundTransparency = 1
 
 -- Adjust content position if players list is visible
-playersListFrame:GetPropertyChangedSignal("Visible"):Connect(function()
-	if playersListFrame.Visible then
+mainPlayersListFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+	if mainPlayersListFrame.Visible then
 		tabBar.Position = UDim2.new(0, 0, 0, 140)
 		contentFrame.Position = UDim2.new(0, 0, 0, 175)
 		contentFrame.Size = UDim2.new(1, 0, 1, -175)
@@ -365,7 +365,7 @@ local function createAccessoryButton(accessory)
 	end
 
 	button.MouseButton1Click:Connect(function()
-		local char = targetPlayer.Character
+		local char = mainTargetPlayer.Character
 		if not char then return end
 
 		-- Check if already wearing
@@ -416,7 +416,7 @@ local function createClothingButton(item)
 	button.Image = string.format("rbxthumb://type=Asset&id=%d&w=150&h=150", id)
 
 	button.MouseButton1Click:Connect(function()
-		local char = targetPlayer.Character
+		local char = mainTargetPlayer.Character
 		if not char then return end
 
 		-- Remove old of same type
@@ -478,7 +478,7 @@ ClothesFolder.DescendantAdded:Connect(function(item)
 	end
 end)
 
--- Toggle GUI with hotkey (e.g., 'I')
+-- Toggle GUI with hotkey (e.g., 'E')
 local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
@@ -501,8 +501,8 @@ Instance.new("UICorner", zButton).CornerRadius = UDim.new(0, 8)
 
 local toolsPopup = Instance.new("Frame")
 toolsPopup.Parent = screenGui
-toolsPopup.Size = UDim2.new(0, 300, 0, 200)
-toolsPopup.Position = UDim2.new(0.5, -150, 0.5, -100)
+toolsPopup.Size = UDim2.new(0, 300, 0, 250)
+toolsPopup.Position = UDim2.new(0.5, -150, 0.5, -125)
 toolsPopup.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 toolsPopup.Visible = false
 toolsPopup.Active = true
@@ -517,7 +517,7 @@ toolsTitleBar.BorderSizePixel = 0
 
 local toolsTitle = Instance.new("TextLabel")
 toolsTitle.Parent = toolsTitleBar
-toolsTitle.Size = UDim2.new(1, -40, 1, 0)
+toolsTitle.Size = UDim2.new(1, -180, 1, 0)
 toolsTitle.Position = UDim2.new(0, 10, 0, 0)
 toolsTitle.BackgroundTransparency = 1
 toolsTitle.Text = "Tools"
@@ -540,6 +540,72 @@ toolsClose.MouseButton1Click:Connect(function()
 	toolsPopup.Visible = false
 end)
 
+-- Target Player Selector for Tools Popup
+local toolsTargetPlayer = LocalPlayer
+local toolsTargetLabel = Instance.new("TextLabel", toolsTitleBar)
+toolsTargetLabel.Size = UDim2.new(0, 140, 1, 0)
+toolsTargetLabel.Position = UDim2.new(1, -180, 0, 0)
+toolsTargetLabel.BackgroundTransparency = 1
+toolsTargetLabel.Text = "Target: " .. LocalPlayer.Name
+toolsTargetLabel.Font = Enum.Font.Gotham
+toolsTargetLabel.TextSize = 16
+toolsTargetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+toolsTargetLabel.TextXAlignment = Enum.TextXAlignment.Right
+
+local toolsTargetButton = Instance.new("TextButton", toolsTitleBar)
+toolsTargetButton.Size = UDim2.new(0, 140, 1, 0)
+toolsTargetButton.Position = UDim2.new(1, -180, 0, 0)
+toolsTargetButton.BackgroundTransparency = 1
+toolsTargetButton.Text = ""
+
+local toolsPlayersListFrame = Instance.new("ScrollingFrame", toolsPopup)
+toolsPlayersListFrame.Size = UDim2.new(1, 0, 0, 100)
+toolsPlayersListFrame.Position = UDim2.new(0, 0, 0, 40)
+toolsPlayersListFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+toolsPlayersListFrame.Visible = false
+toolsPlayersListFrame.ScrollBarThickness = 6
+toolsPlayersListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+toolsPlayersListFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local toolsPlayersGrid = Instance.new("UIGridLayout", toolsPlayersListFrame)
+toolsPlayersGrid.CellSize = UDim2.new(1, 0, 0, 30)
+toolsPlayersGrid.CellPadding = UDim2.new(0, 0, 0, 5)
+
+local function updateToolsPlayersList()
+	for _, child in ipairs(toolsPlayersListFrame:GetChildren()) do
+		if child:IsA("TextButton") then
+			child:Destroy()
+		end
+	end
+	for _, player in ipairs(Players:GetPlayers()) do
+		local btn = Instance.new("TextButton", toolsPlayersListFrame)
+		btn.Text = player.Name
+		btn.Font = Enum.Font.Gotham
+		btn.TextSize = 16
+		btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+		btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+		Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+		btn.MouseButton1Click:Connect(function()
+			toolsTargetPlayer = player
+			toolsTargetLabel.Text = "Target: " .. player.Name
+			toolsPlayersListFrame.Visible = false
+		end)
+	end
+	toolsPlayersGrid:ApplyLayout()
+end
+
+updateToolsPlayersList()
+
+Players.PlayerAdded:Connect(updateToolsPlayersList)
+Players.PlayerRemoving:Connect(updateToolsPlayersList)
+
+toolsTargetButton.MouseButton1Click:Connect(function()
+	toolsPlayersListFrame.Visible = not toolsPlayersListFrame.Visible
+	if toolsPlayersListFrame.Visible then
+		updateToolsPlayersList()
+	end
+end)
+
 local toolsContent = Instance.new("ScrollingFrame")
 toolsContent.Parent = toolsPopup
 toolsContent.Size = UDim2.new(1, 0, 1, -40)
@@ -548,6 +614,17 @@ toolsContent.BackgroundTransparency = 1
 toolsContent.ScrollBarThickness = 6
 toolsContent.CanvasSize = UDim2.new(0, 0, 0, 0)
 toolsContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+-- Adjust tools content position if players list is visible
+toolsPlayersListFrame:GetPropertyChangedSignal("Visible"):Connect(function()
+	if toolsPlayersListFrame.Visible then
+		toolsContent.Position = UDim2.new(0, 0, 0, 140)
+		toolsContent.Size = UDim2.new(1, 0, 1, -140)
+	else
+		toolsContent.Position = UDim2.new(0, 0, 0, 40)
+		toolsContent.Size = UDim2.new(1, 0, 1, -40)
+	end
+end)
 
 local toolsGrid = Instance.new("UIGridLayout")
 toolsGrid.Parent = toolsContent
@@ -558,7 +635,7 @@ toolsGrid.SortOrder = Enum.SortOrder.LayoutOrder
 -- Add remove button
 local removeButton = Instance.new("TextButton")
 removeButton.Parent = toolsContent
-removeButton.Text = "Remove Accessories from AvraamPetroman"
+removeButton.Text = "Remove Accessories"
 removeButton.Font = Enum.Font.Gotham
 removeButton.TextSize = 16
 removeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
@@ -570,7 +647,7 @@ removeButton.MouseButton1Click:Connect(function()
 		warn("Players folder not found in workspace")
 		return
 	end
-	local playerChar = playersFolder:FindFirstChild("AvraamPetroman")
+	local playerChar = playersFolder:FindFirstChild(toolsTargetPlayer.Name)
 	if playerChar then
 		local targetAccessory = playerChar:FindFirstChild("Accessories")
 		if targetAccessory then
@@ -579,7 +656,7 @@ removeButton.MouseButton1Click:Connect(function()
 			warn("Accessory not found in " .. playerChar.Name)
 		end
 	else
-		warn("Player character not found: AvraamPetroman")
+		warn("Player character not found: " .. toolsTargetPlayer.Name)
 	end
 end)
 
