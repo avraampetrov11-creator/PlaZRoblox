@@ -632,16 +632,16 @@ toolsGrid.CellSize = UDim2.new(1, -10, 0, 40)
 toolsGrid.CellPadding = UDim2.new(0, 0, 0, 5)
 toolsGrid.SortOrder = Enum.SortOrder.LayoutOrder
 
--- Add remove button
-local removeButton = Instance.new("TextButton")
-removeButton.Parent = toolsContent
-removeButton.Text = "Remove Accessories"
-removeButton.Font = Enum.Font.Gotham
-removeButton.TextSize = 16
-removeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-removeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-Instance.new("UICorner", removeButton).CornerRadius = UDim.new(0, 8)
-removeButton.MouseButton1Click:Connect(function()
+-- Add remove accessories button
+local removeAccessoriesButton = Instance.new("TextButton")
+removeAccessoriesButton.Parent = toolsContent
+removeAccessoriesButton.Text = "Remove Accessories"
+removeAccessoriesButton.Font = Enum.Font.Gotham
+removeAccessoriesButton.TextSize = 16
+removeAccessoriesButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+removeAccessoriesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", removeAccessoriesButton).CornerRadius = UDim.new(0, 8)
+removeAccessoriesButton.MouseButton1Click:Connect(function()
 	local playersFolder = workspace:FindFirstChild("Players")
 	if not playersFolder then
 		warn("Players folder not found in workspace")
@@ -654,6 +654,39 @@ removeButton.MouseButton1Click:Connect(function()
 			safeFireServer("Tools", "Remove", targetAccessory, playerChar)
 		else
 			warn("Accessory not found in " .. playerChar.Name)
+		end
+	else
+		warn("Player character not found: " .. toolsTargetPlayer.Name)
+	end
+end)
+
+-- Add remove clothes button
+local removeClothesButton = Instance.new("TextButton")
+removeClothesButton.Parent = toolsContent
+removeClothesButton.Text = "Remove Clothing"
+removeClothesButton.Font = Enum.Font.Gotham
+removeClothesButton.TextSize = 16
+removeClothesButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+removeClothesButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", removeClothesButton).CornerRadius = UDim.new(0, 8)
+removeClothesButton.MouseButton1Click:Connect(function()
+	local playersFolder = workspace:FindFirstChild("Players")
+	if not playersFolder then
+		warn("Players folder not found in workspace")
+		return
+	end
+	local playerChar = playersFolder:FindFirstChild(toolsTargetPlayer.Name)
+	if playerChar then
+		local shirt = playerChar:FindFirstChildOfClass("Shirt")
+		if shirt then
+			safeFireServer("Tools", "Remove", shirt, playerChar)
+		end
+		local pants = playerChar:FindFirstChildOfClass("Pants")
+		if pants then
+			safeFireServer("Tools", "Remove", pants, playerChar)
+		end
+		if not shirt and not pants then
+			warn("No clothing found in " .. playerChar.Name)
 		end
 	else
 		warn("Player character not found: " .. toolsTargetPlayer.Name)
