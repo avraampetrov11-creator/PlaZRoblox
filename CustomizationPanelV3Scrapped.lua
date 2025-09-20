@@ -3,7 +3,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Core_Replication = ReplicatedStorage:WaitForChild("Events"):WaitForChild("Core_Replication")
 local LocalPlayer = Players.LocalPlayer
-local UserInputService = game:GetService("UserInputService")
 
 -- === Helper Functions ===
 local function waitForChild(parent, childName, timeout)
@@ -160,41 +159,15 @@ mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.Active = true
 mainFrame.Draggable = true
 Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 12)
-local uiGradient = Instance.new("UIGradient", mainFrame)
-uiGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(25, 25, 25)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(45, 45, 45))
-}
 
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 40)
 titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 titleBar.BorderSizePixel = 0
-local titleGradient = Instance.new("UIGradient", titleBar)
-titleGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 50, 50))
-}
-
--- Z Button (top left addon for removal menu)
-local zButton = Instance.new("TextButton", titleBar)
-zButton.Size = UDim2.new(0, 40, 0, 30)
-zButton.Position = UDim2.new(0, 5, 0, 5)
-zButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-zButton.Text = "Z"
-zButton.Font = Enum.Font.GothamBold
-zButton.TextSize = 20
-zButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-Instance.new("UICorner", zButton).CornerRadius = UDim.new(0, 6)
-local zGradient = Instance.new("UIGradient", zButton)
-zGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(50, 50, 50)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(70, 70, 70))
-}
 
 local title = Instance.new("TextLabel", titleBar)
-title.Size = UDim2.new(1, -180, 1, 0)
-title.Position = UDim2.new(0, 50, 0, 0)
+title.Size = UDim2.new(1, -140, 1, 0)
+title.Position = UDim2.new(0, 10, 0, 0)
 title.BackgroundTransparency = 1
 title.Text = "Inventory"
 title.Font = Enum.Font.GothamBold
@@ -282,59 +255,6 @@ targetButton.MouseButton1Click:Connect(function()
 	end
 end)
 
--- Removal Menu (for accessories, toggled by Z button)
-local removalFrame = Instance.new("ScrollingFrame", mainFrame)
-removalFrame.Size = UDim2.new(1, 0, 0, 150)
-removalFrame.Position = UDim2.new(0, 0, 0, 40)
-removalFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-removalFrame.Visible = false
-removalFrame.ScrollBarThickness = 6
-removalFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
-removalFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-local removalGradient = Instance.new("UIGradient", removalFrame)
-removalGradient.Color = ColorSequence.new{
-	ColorSequenceKeypoint.new(0, Color3.fromRGB(35, 35, 35)),
-	ColorSequenceKeypoint.new(1, Color3.fromRGB(55, 55, 55))
-}
-
-local removalGrid = Instance.new("UIGridLayout", removalFrame)
-removalGrid.CellSize = UDim2.new(1, 0, 0, 30)
-removalGrid.CellPadding = UDim2.new(0, 0, 0, 5)
-
-local function updateRemovalList()
-	for _, child in ipairs(removalFrame:GetChildren()) do
-		if child:IsA("TextButton") then
-			child:Destroy()
-		end
-	end
-	local char = targetPlayer.Character
-	if not char then return end
-	for _, accessory in ipairs(char:GetChildren()) do
-		if accessory:IsA("Accessory") then
-			local btn = Instance.new("TextButton", removalFrame)
-			btn.Text = "Remove: " .. accessory.Name
-			btn.Font = Enum.Font.Gotham
-			btn.TextSize = 16
-			btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-			btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
-			btn.MouseButton1Click:Connect(function()
-				safeFireServer("Tools", "Remove", accessory, char)
-				updateRemovalList()  -- Refresh list after removal
-			end)
-		end
-	end
-	removalGrid:ApplyLayout()
-end
-
-zButton.MouseButton1Click:Connect(function()
-	removalFrame.Visible = not removalFrame.Visible
-	if removalFrame.Visible then
-		updateRemovalList()
-		playersListFrame.Visible = false  -- Close other dropdown if open
-	end
-end)
-
 -- Tabs
 local tabBar = Instance.new("Frame", mainFrame)
 tabBar.Size = UDim2.new(1, 0, 0, 35)
@@ -363,23 +283,18 @@ contentFrame.Size = UDim2.new(1, 0, 1, -75)
 contentFrame.Position = UDim2.new(0, 0, 0, 75)
 contentFrame.BackgroundTransparency = 1
 
--- Adjust positions based on visible dropdowns
-local function updatePositions()
-	local offset = 40
+-- Adjust content position if players list is visible
+playersListFrame:GetPropertyChangedSignal("Visible"):Connect(function()
 	if playersListFrame.Visible then
-		offset = offset + 100
+		tabBar.Position = UDim2.new(0, 0, 0, 140)
+		contentFrame.Position = UDim2.new(0, 0, 0, 175)
+		contentFrame.Size = UDim2.new(1, 0, 1, -175)
+	else
+		tabBar.Position = UDim2.new(0, 0, 0, 40)
+		contentFrame.Position = UDim2.new(0, 0, 0, 75)
+		contentFrame.Size = UDim2.new(1, 0, 1, -75)
 	end
-	if removalFrame.Visible then
-		offset = offset + 150
-	end
-	tabBar.Position = UDim2.new(0, 0, 0, offset)
-	contentFrame.Position = UDim2.new(0, 0, 0, offset + 35)
-	contentFrame.Size = UDim2.new(1, 0, 1, -(offset + 35))
-end
-
-playersListFrame:GetPropertyChangedSignal("Visible"):Connect(updatePositions)
-removalFrame:GetPropertyChangedSignal("Visible"):Connect(updatePositions)
-updatePositions()
+end)
 
 -- Accessories Frame
 local accessoriesFrame = Instance.new("ScrollingFrame", contentFrame)
@@ -391,7 +306,7 @@ accessoriesFrame.BackgroundTransparency = 1
 accessoriesFrame.Active = true
 
 local accGrid = Instance.new("UIGridLayout", accessoriesFrame)
-accGrid.CellSize = UDim2.new(0, 100, 0, 120)  -- Increased height for name
+accGrid.CellSize = UDim2.new(0, 100, 0, 100)
 accGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 accGrid.FillDirectionMaxCells = 4
 accGrid.SortOrder = Enum.SortOrder.Name
@@ -407,7 +322,7 @@ clothingFrame.Active = true
 clothingFrame.Visible = false
 
 local clothGrid = Instance.new("UIGridLayout", clothingFrame)
-clothGrid.CellSize = UDim2.new(0, 120, 0, 140)  -- Increased height if needed
+clothGrid.CellSize = UDim2.new(0, 120, 0, 120)
 clothGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 clothGrid.FillDirectionMaxCells = 3
 clothGrid.SortOrder = Enum.SortOrder.Name
@@ -435,15 +350,10 @@ local function createAccessoryButton(accessory)
 	button.Name = accessory.Name
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
-	local btnGradient = Instance.new("UIGradient", button)
-	btnGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
-	}
 
 	-- Improved preview using ViewportFrame for 3D render
 	local viewport = Instance.new("ViewportFrame", button)
-	viewport.Size = UDim2.new(1, 0, 1, -20)
+	viewport.Size = UDim2.new(1, 0, 1, 0)
 	viewport.BackgroundTransparency = 1
 	local clone = accessory:Clone()
 	clone.Parent = viewport
@@ -453,24 +363,6 @@ local function createAccessoryButton(accessory)
 	if handle then
 		camera.CFrame = CFrame.new(handle.Position + Vector3.new(0, 0, 3), handle.Position)
 	end
-
-	-- Accessory name display
-	local nameLabel = Instance.new("TextLabel", button)
-	nameLabel.Size = UDim2.new(1, 0, 0, 20)
-	nameLabel.Position = UDim2.new(0, 0, 1, -20)
-	nameLabel.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-	nameLabel.Text = accessory.Name
-	nameLabel.Font = Enum.Font.Gotham
-	nameLabel.TextSize = 14
-	nameLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-	nameLabel.TextTruncate = Enum.TextTruncate.Split
-	nameLabel.TextWrapped = true
-	Instance.new("UICorner", nameLabel).CornerRadius = UDim.new(0, 10)
-	local nameGradient = Instance.new("UIGradient", nameLabel)
-	nameGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 30, 30)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(50, 50, 50))
-	}
 
 	button.MouseButton1Click:Connect(function()
 		local char = targetPlayer.Character
@@ -513,11 +405,6 @@ local function createClothingButton(item)
 	button.Name = item.Name
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
-	local btnGradient = Instance.new("UIGradient", button)
-	btnGradient.Color = ColorSequence.new{
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(40, 40, 40)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 60, 60))
-	}
 
 	-- Thumbnail preview
 	local id
@@ -591,14 +478,120 @@ ClothesFolder.DescendantAdded:Connect(function(item)
 	end
 end)
 
--- Toggle GUI with hotkey (e.g., 'E')
+-- Toggle GUI with hotkey (e.g., 'I')
+local UserInputService = game:GetService("UserInputService")
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.E then
 		screenGui.Enabled = not screenGui.Enabled
-		if screenGui.Enabled then
-			removalFrame.Visible = false
-			playersListFrame.Visible = false
+	end
+end)
+
+-- === Upgrade: Add "Z" button and tools popup ===
+local zButton = Instance.new("TextButton")
+zButton.Parent = screenGui
+zButton.Size = UDim2.new(0, 40, 0, 40)
+zButton.Position = UDim2.new(0, 10, 0, 10)
+zButton.Text = "Z"
+zButton.Font = Enum.Font.GothamBold
+zButton.TextSize = 20
+zButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+zButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", zButton).CornerRadius = UDim.new(0, 8)
+
+local toolsPopup = Instance.new("Frame")
+toolsPopup.Parent = screenGui
+toolsPopup.Size = UDim2.new(0, 300, 0, 200)
+toolsPopup.Position = UDim2.new(0.5, -150, 0.5, -100)
+toolsPopup.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+toolsPopup.Visible = false
+toolsPopup.Active = true
+toolsPopup.Draggable = true
+Instance.new("UICorner", toolsPopup).CornerRadius = UDim.new(0, 12)
+
+local toolsTitleBar = Instance.new("Frame")
+toolsTitleBar.Parent = toolsPopup
+toolsTitleBar.Size = UDim2.new(1, 0, 0, 40)
+toolsTitleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+toolsTitleBar.BorderSizePixel = 0
+
+local toolsTitle = Instance.new("TextLabel")
+toolsTitle.Parent = toolsTitleBar
+toolsTitle.Size = UDim2.new(1, -40, 1, 0)
+toolsTitle.Position = UDim2.new(0, 10, 0, 0)
+toolsTitle.BackgroundTransparency = 1
+toolsTitle.Text = "Tools"
+toolsTitle.Font = Enum.Font.GothamBold
+toolsTitle.TextSize = 20
+toolsTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toolsTitle.TextXAlignment = Enum.TextXAlignment.Left
+
+local toolsClose = Instance.new("TextButton")
+toolsClose.Parent = toolsTitleBar
+toolsClose.Size = UDim2.new(0, 30, 0, 30)
+toolsClose.Position = UDim2.new(1, -35, 0, 5)
+toolsClose.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+toolsClose.Text = "X"
+toolsClose.Font = Enum.Font.GothamBold
+toolsClose.TextSize = 16
+toolsClose.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", toolsClose).CornerRadius = UDim.new(0, 6)
+toolsClose.MouseButton1Click:Connect(function()
+	toolsPopup.Visible = false
+end)
+
+local toolsContent = Instance.new("ScrollingFrame")
+toolsContent.Parent = toolsPopup
+toolsContent.Size = UDim2.new(1, 0, 1, -40)
+toolsContent.Position = UDim2.new(0, 0, 0, 40)
+toolsContent.BackgroundTransparency = 1
+toolsContent.ScrollBarThickness = 6
+toolsContent.CanvasSize = UDim2.new(0, 0, 0, 0)
+toolsContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+local toolsGrid = Instance.new("UIGridLayout")
+toolsGrid.Parent = toolsContent
+toolsGrid.CellSize = UDim2.new(1, -10, 0, 40)
+toolsGrid.CellPadding = UDim2.new(0, 0, 0, 5)
+toolsGrid.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Add remove button
+local removeButton = Instance.new("TextButton")
+removeButton.Parent = toolsContent
+removeButton.Text = "Remove Accessories from AvraamPetroman"
+removeButton.Font = Enum.Font.Gotham
+removeButton.TextSize = 16
+removeButton.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+removeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+Instance.new("UICorner", removeButton).CornerRadius = UDim.new(0, 8)
+removeButton.MouseButton1Click:Connect(function()
+	local playersFolder = workspace:FindFirstChild("Players")
+	if not playersFolder then
+		warn("Players folder not found in workspace")
+		return
+	end
+	local playerChar = playersFolder:FindFirstChild("AvraamPetroman")
+	if playerChar then
+		local targetAccessory = playerChar:FindFirstChild("Accessories")
+		if targetAccessory then
+			safeFireServer("Tools", "Remove", targetAccessory, playerChar)
+		else
+			warn("Accessory not found in " .. playerChar.Name)
 		end
+	else
+		warn("Player character not found: AvraamPetroman")
+	end
+end)
+
+-- Connect Z button to toggle popup
+zButton.MouseButton1Click:Connect(function()
+	toolsPopup.Visible = not toolsPopup.Visible
+end)
+
+-- Optional: Add hotkey for Z popup (e.g., KeyCode.Z)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.Z then
+		toolsPopup.Visible = not toolsPopup.Visible
 	end
 end)
