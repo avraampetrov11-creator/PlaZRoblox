@@ -536,7 +536,7 @@ local function scanClothesFolder(folder)
 		end
 	end
 
-	if preloadedFolder then
+if preloadedFolder then
     local fromCharacter = folder.Name
     local charFolder = preloadedFolder:FindFirstChild(fromCharacter)
     if not charFolder then
@@ -567,6 +567,7 @@ local function scanClothesFolder(folder)
         end
     end
 end
+
 
 
 -- Initial scan
