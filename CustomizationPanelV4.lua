@@ -340,7 +340,7 @@ local clothGrid = Instance.new("UIGridLayout", clothingFrame)
 clothGrid.CellSize = UDim2.new(0, 120, 0, 140)  -- Increased height for label
 clothGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 clothGrid.FillDirectionMaxCells = 3
-clothGrid.SortOrder = Enum.SortOrder.Name
+clothGrid.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- Tab switching
 accessoriesTab.MouseButton1Click:Connect(function()
@@ -413,6 +413,35 @@ local function createAccessoryButton(accessory)
 	accGrid:ApplyLayout()
 end
 
+local function updateClothingButtonsOrder()
+	local buttons = {}
+	for _, child in ipairs(clothingFrame:GetChildren()) do
+		if child:IsA("ImageButton") then
+			table.insert(buttons, child)
+		end
+	end
+	
+	table.sort(buttons, function(a, b)
+		local fromA = a:GetAttribute("FromCharacter") or "Unknown"
+		local fromB = b:GetAttribute("FromCharacter") or "Unknown"
+		if fromA ~= fromB then
+			return fromA < fromB
+		end
+		
+		local isShirtA = a:GetAttribute("IsShirt")
+		local isShirtB = b:GetAttribute("IsShirt")
+		if isShirtA ~= isShirtB then
+			return isShirtA  -- Shirts before pants
+		end
+		
+		return a.Name < b.Name
+	end)
+	
+	for i, btn in ipairs(buttons) do
+		btn.LayoutOrder = i
+	end
+end
+
 local function createClothingButton(item, fromCharacter)
 	if not (item:IsA("Shirt") or item:IsA("Pants")) then return end
 
@@ -420,6 +449,8 @@ local function createClothingButton(item, fromCharacter)
 	button.Name = item.Name
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
+	button:SetAttribute("FromCharacter", fromCharacter or "Unknown")
+	button:SetAttribute("IsShirt", item:IsA("Shirt"))
 
 	-- Thumbnail preview
 	local id
@@ -457,7 +488,7 @@ local function createClothingButton(item, fromCharacter)
 		safeFireServer("Tools", "Add", item, char)
 	end)
 	
-	clothGrid:ApplyLayout()
+	updateClothingButtonsOrder()
 end
 
 -- Watch for stored items
