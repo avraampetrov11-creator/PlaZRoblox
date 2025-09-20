@@ -326,21 +326,70 @@ accGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 accGrid.FillDirectionMaxCells = 4
 accGrid.SortOrder = Enum.SortOrder.Name
 
--- Clothing Frame
-local clothingFrame = Instance.new("ScrollingFrame", contentFrame)
-clothingFrame.Size = UDim2.new(1, -20, 1, -10)
-clothingFrame.Position = UDim2.new(0, 10, 0, 5)
-clothingFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
-clothingFrame.ScrollBarThickness = 8
+-- Clothing Frame with Sub-Tabs
+local clothingFrame = Instance.new("Frame", contentFrame)
+clothingFrame.Size = UDim2.new(1, 0, 1, 0)
 clothingFrame.BackgroundTransparency = 1
-clothingFrame.Active = true
 clothingFrame.Visible = false
 
-local clothGrid = Instance.new("UIGridLayout", clothingFrame)
-clothGrid.CellSize = UDim2.new(0, 120, 0, 140)  -- Increased height for label
-clothGrid.CellPadding = UDim2.new(0, 10, 0, 10)
-clothGrid.FillDirectionMaxCells = 3
-clothGrid.SortOrder = Enum.SortOrder.LayoutOrder
+-- Clothing Sub-Tabs
+local clothingSubTabBar = Instance.new("Frame", clothingFrame)
+clothingSubTabBar.Size = UDim2.new(1, 0, 0, 30)
+clothingSubTabBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+local shirtsSubTab = Instance.new("TextButton", clothingSubTabBar)
+shirtsSubTab.Size = UDim2.new(0.5, 0, 1, 0)
+shirtsSubTab.Text = "Shirts"
+shirtsSubTab.Font = Enum.Font.GothamBold
+shirtsSubTab.TextSize = 14
+shirtsSubTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+shirtsSubTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+
+local pantsSubTab = Instance.new("TextButton", clothingSubTabBar)
+pantsSubTab.Size = UDim2.new(0.5, 0, 1, 0)
+pantsSubTab.Position = UDim2.new(0.5, 0, 0, 0)
+pantsSubTab.Text = "Pants"
+pantsSubTab.Font = Enum.Font.GothamBold
+pantsSubTab.TextSize = 14
+pantsSubTab.TextColor3 = Color3.fromRGB(255, 255, 255)
+pantsSubTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+
+-- Clothing Content Frame
+local clothingContentFrame = Instance.new("Frame", clothingFrame)
+clothingContentFrame.Size = UDim2.new(1, 0, 1, -30)
+clothingContentFrame.Position = UDim2.new(0, 0, 0, 30)
+clothingContentFrame.BackgroundTransparency = 1
+
+-- Shirts Frame
+local shirtsFrame = Instance.new("ScrollingFrame", clothingContentFrame)
+shirtsFrame.Size = UDim2.new(1, -20, 1, -10)
+shirtsFrame.Position = UDim2.new(0, 10, 0, 5)
+shirtsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+shirtsFrame.ScrollBarThickness = 8
+shirtsFrame.BackgroundTransparency = 1
+shirtsFrame.Active = true
+
+local shirtsGrid = Instance.new("UIGridLayout", shirtsFrame)
+shirtsGrid.CellSize = UDim2.new(0, 120, 0, 140)
+shirtsGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+shirtsGrid.FillDirectionMaxCells = 3
+shirtsGrid.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- Pants Frame
+local pantsFrame = Instance.new("ScrollingFrame", clothingContentFrame)
+pantsFrame.Size = UDim2.new(1, -20, 1, -10)
+pantsFrame.Position = UDim2.new(0, 10, 0, 5)
+pantsFrame.AutomaticCanvasSize = Enum.AutomaticSize.Y
+pantsFrame.ScrollBarThickness = 8
+pantsFrame.BackgroundTransparency = 1
+pantsFrame.Active = true
+pantsFrame.Visible = false
+
+local pantsGrid = Instance.new("UIGridLayout", pantsFrame)
+pantsGrid.CellSize = UDim2.new(0, 120, 0, 140)
+pantsGrid.CellPadding = UDim2.new(0, 10, 0, 10)
+pantsGrid.FillDirectionMaxCells = 3
+pantsGrid.SortOrder = Enum.SortOrder.LayoutOrder
 
 -- Tab switching
 accessoriesTab.MouseButton1Click:Connect(function()
@@ -353,8 +402,23 @@ end)
 clothingTab.MouseButton1Click:Connect(function()
 	clothingTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 	accessoriesTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-	clothingFrame.Visible = true
 	accessoriesFrame.Visible = false
+	clothingFrame.Visible = true
+end)
+
+-- Clothing Sub-Tab switching
+shirtsSubTab.MouseButton1Click:Connect(function()
+	shirtsSubTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	pantsSubTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	shirtsFrame.Visible = true
+	pantsFrame.Visible = false
+end)
+
+pantsSubTab.MouseButton1Click:Connect(function()
+	pantsSubTab.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+	shirtsSubTab.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	shirtsFrame.Visible = false
+	pantsFrame.Visible = true
 end)
 
 -- === Build Buttons from Stored Items ===
@@ -413,27 +477,25 @@ local function createAccessoryButton(accessory)
 	accGrid:ApplyLayout()
 end
 
-local function updateClothingButtonsOrder()
+local function updateClothingButtonsOrder(frame)
 	local buttons = {}
-	for _, child in ipairs(clothingFrame:GetChildren()) do
+	for _, child in ipairs(frame:GetChildren()) do
 		if child:IsA("ImageButton") then
 			table.insert(buttons, child)
 		end
 	end
 	
+	-- Sort by character name first, then by name
 	table.sort(buttons, function(a, b)
 		local fromA = a:GetAttribute("FromCharacter") or "Unknown"
 		local fromB = b:GetAttribute("FromCharacter") or "Unknown"
+		
+		-- First sort by character name
 		if fromA ~= fromB then
 			return fromA < fromB
 		end
 		
-		local isShirtA = a:GetAttribute("IsShirt")
-		local isShirtB = b:GetAttribute("IsShirt")
-		if isShirtA ~= isShirtB then
-			return isShirtA  -- Shirts before pants
-		end
-		
+		-- Then sort by name
 		return a.Name < b.Name
 	end)
 	
@@ -445,7 +507,10 @@ end
 local function createClothingButton(item, fromCharacter)
 	if not (item:IsA("Shirt") or item:IsA("Pants")) then return end
 
-	local button = Instance.new("ImageButton", clothingFrame)
+	-- Determine which frame to add to based on item type
+	local targetFrame = item:IsA("Shirt") and shirtsFrame or pantsFrame
+	
+	local button = Instance.new("ImageButton", targetFrame)
 	button.Name = item.Name
 	button.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 	Instance.new("UICorner", button).CornerRadius = UDim.new(0, 10)
@@ -488,7 +553,7 @@ local function createClothingButton(item, fromCharacter)
 		safeFireServer("Tools", "Add", item, char)
 	end)
 	
-	updateClothingButtonsOrder()
+	updateClothingButtonsOrder(targetFrame)
 end
 
 -- Watch for stored items
@@ -525,6 +590,58 @@ end
 -- Additional ClothesFolder scanning (assuming it's a pre-populated folder)
 local ClothesFolder = Misc:WaitForChild("Clothes")
 
+-- Function to scan NPC characters for clothing
+local function scanNPCCharactersForClothing()
+	local npcFolder = workspace:FindFirstChild("NPCs") or workspace:FindFirstChild("Characters")
+	if not npcFolder then return end
+	
+	for _, npc in ipairs(npcFolder:GetChildren()) do
+		if npc:IsA("Model") and not Players:GetPlayerFromCharacter(npc) then
+			-- Create a folder for this NPC character
+			local npcClothingFolder = ClothingFolder:FindFirstChild(npc.Name)
+			if not npcClothingFolder then
+				safeFireServer("Tools", "Add", PlaceholderFolder, ClothingFolder)
+				npcClothingFolder = waitForChild(ClothingFolder, "Answer_Types")
+				if npcClothingFolder then
+					npcClothingFolder.Name = npc.Name
+				end
+			end
+			
+			if npcClothingFolder then
+				-- Save shirt
+				local shirt = npc:FindFirstChildOfClass("Shirt")
+				if shirt and shirt.ShirtTemplate ~= "" then
+					local exists = false
+					for _, existing in ipairs(npcClothingFolder:GetChildren()) do
+						if existing:IsA("Shirt") and existing.ShirtTemplate == shirt.ShirtTemplate then
+							exists = true
+							break
+						end
+					end
+					if not exists then
+						safeFireServer("Tools", "Add", shirt, npcClothingFolder)
+					end
+				end
+
+				-- Save pants
+				local pants = npc:FindFirstChildOfClass("Pants")
+				if pants and pants.PantsTemplate ~= "" then
+					local exists = false
+					for _, existing in ipairs(npcClothingFolder:GetChildren()) do
+						if existing:IsA("Pants") and existing.PantsTemplate == pants.PantsTemplate then
+							exists = true
+							break
+						end
+					end
+					if not exists then
+						safeFireServer("Tools", "Add", pants, npcClothingFolder)
+					end
+				end
+			end
+		end
+	end
+end
+
 local function scanClothesFolder(folder)
 	-- Create or get Preloaded subfolder
 	local preloadedFolder = ClothingFolder:FindFirstChild("Preloaded")
@@ -533,55 +650,35 @@ local function scanClothesFolder(folder)
 		preloadedFolder = waitForChild(ClothingFolder, "Answer_Types")
 		if preloadedFolder then
 			preloadedFolder.Name = "Preloaded"
-		else
-			warn("Failed to create Preloaded folder")
-			return
 		end
 	end
 
-	-- Create or get character-specific subfolder
-	local fromCharacter = folder.Name
-	local charFolder = preloadedFolder:FindFirstChild(fromCharacter)
-	if not charFolder then
-		safeFireServer("Tools", "Add", PlaceholderFolder, preloadedFolder)
-		charFolder = waitForChild(preloadedFolder, "Answer_Types")
-		if charFolder then
-			charFolder.Name = fromCharacter
-		else
-			warn("Failed to create charFolder for " .. fromCharacter)
-			return
-		end
-	end
-
-	-- Add shirts/pants into charFolder
-	for _, item in ipairs(folder:GetDescendants()) do
-		if item:IsA("Shirt") or item:IsA("Pants") then
-			local exists = false
-			for _, existing in ipairs(charFolder:GetChildren()) do
-				if item:IsA("Shirt") and existing:IsA("Shirt") then
-					if existing.ShirtTemplate == item.ShirtTemplate then
+	if preloadedFolder then
+		for _, item in ipairs(folder:GetDescendants()) do
+			if item:IsA("Shirt") or item:IsA("Pants") then
+				-- Check if exists in Preloaded
+				local exists = false
+				for _, existing in ipairs(preloadedFolder:GetChildren()) do
+					if item:IsA("Shirt") and existing:IsA("Shirt") and existing.ShirtTemplate == item.ShirtTemplate then
 						exists = true
 						break
-					end
-				elseif item:IsA("Pants") and existing:IsA("Pants") then
-					if existing.PantsTemplate == item.PantsTemplate then
+					elseif item:IsA("Pants") and existing:IsA("Pants") and existing.PantsTemplate == item.PantsTemplate then
 						exists = true
 						break
 					end
 				end
-			end
-			if not exists then
-				safeFireServer("Tools", "Add", item, charFolder)
+				if not exists then
+					safeFireServer("Tools", "Add", item, preloadedFolder)
+				end
 			end
 		end
 	end
 end
 
-
-
 -- Initial scan
 if ClothingFolder then
 	scanClothesFolder(ClothesFolder)
+	scanNPCCharactersForClothing()
 end
 
 -- Watch for new items added in runtime
@@ -810,13 +907,6 @@ local toolsList = {
 			end
 		end
 	},
-	-- Add more tools here easily, e.g.:
-	-- {
-	--     text = "Example Button",
-	--     action = function(targetPlayer)
-	--         -- Your script here, using targetPlayer and safeFireServer
-	--     end
-	-- },
 }
 
 -- Create buttons from the list
