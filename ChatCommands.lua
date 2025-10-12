@@ -1,31 +1,28 @@
--- I WARNED, YOU ALL. YOU'VE IGNORED NOW YOUL LIFES WILL FALL. AS FOR. MY NAME, REPUTATIONS ARLEADY BEEN STAINED. AW SHUCKS!
--- Plasmablake
-
 local Players = game:GetService("Players")
 local TextChatService = game:GetService("TextChatService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local Core_Replication = ReplicatedStorage.Events.Core_Replication
-local LocalPlayer = Players.LocalPlayer
 
-local CreateNewMeshCMD = Instance.new("TextChatCommand")
-CreateNewMeshCMD.Name = "SpeedCommand"
-CreateNewMeshCMD.PrimaryAlias = "!CreateNewMesh"
-CreateNewMeshCMD.Parent = TextChatService
+local player = Players.LocalPlayer
+local character = player.Character
+local humanoid = character:WaitForChild("Humanoid")
 
-CreateNewMeshCMD.Triggered:Connect(function(textSource, message)
-    if textSource.UserId == LocalPlayer.UserId then
-        local args = string.split(message, " ")
-        table.remove(args, 1))
-
-        local PlayerName = args[1]
-        local AffectedPlayer = game.Players:FindFirstChild(PlayerName)
-
-        if AffectedPlayer then
-            print("Found player: " .. affectedPlayer.Name)
+TextChatService.OnIncomingMessage = function(message)
+    local args = string.split(message.Text:lower(), " ")
+    if args[1] == "/walkspeed" and args[2] then
+        local speed = tonumber(args[2])
+        if speed then
+            updateWalkSpeed(speed)
+            message.Text = "Walkspeed set to " .. speed
         else
-            warn("Player not found: " .. tostring(playerName))
+            message.Text = "Use a number for walkspeed"
+        end
+    elseif args[1] == "/jumpspeed" and args[2] then
+        local jump = tonumber(args[2])
+        if jump then
+            updateJumpSpeed(jump)
+            message.Text = "Jumpspeed set to " .. jump
+        else
+            message.Text = "Use a number for jumpspeed"
         end
     end
-end)
-
+end
 
