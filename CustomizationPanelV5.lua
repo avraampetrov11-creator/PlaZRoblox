@@ -97,7 +97,12 @@ local function addSmoothHover(button, hoverColor)
     end)
 end
 
--- [ALL YOUR FOLDER CREATION CODE - SAME AS ORIGINAL]
+-- *** FIXED: Get Character Function ***
+local function getCharacter(player)
+    return player.Character or workspace:FindFirstChild(player.Name)
+end
+
+-- [ALL YOUR FOLDER CREATION CODE - SAME AS BEFORE]
 local PlaceholderFolder = ReplicatedStorage.Homework_Related:WaitForChild("Answer_Types")
 local Misc = ReplicatedStorage:WaitForChild("Misc")
 
@@ -641,7 +646,7 @@ local function createAccessoryButton(accessory)
 	nameLabel.TextTruncate = Enum.TextTruncate.SplitWord
 
 	button.MouseButton1Click:Connect(function()
-		local char = mainTargetPlayer.Character
+		local char = getCharacter(mainTargetPlayer)
 		if not char then return end
 		local wearing = false
 		local toRemove
@@ -713,7 +718,7 @@ local function createClothingButton(item, fromCharacter)
 	Instance.new("UICorner", fromLabel).CornerRadius = THEME.SUB_BUTTON_RADIUS
 
 	button.MouseButton1Click:Connect(function()
-		local char = mainTargetPlayer.Character
+		local char = getCharacter(mainTargetPlayer)
 		if not char then return end
 		local class = item.ClassName
 		local old = char:FindFirstChildOfClass(class)
@@ -956,7 +961,9 @@ toolsTargetButton.Position = UDim2.new(1, -185, 0, 0)
 toolsTargetButton.BackgroundTransparency = 1
 toolsTargetButton.Text = ""
 
+-- *** FIXED: TOOLS PLAYER LIST WITH PROPER POSITIONING ***
 local toolsPlayersListFrame = Instance.new("ScrollingFrame", toolsPopup)
+toolsPlayersListFrame.Name = "ToolsPlayersList"
 toolsPlayersListFrame.Size = UDim2.new(1, 0, 0, 120)
 toolsPlayersListFrame.Position = UDim2.new(0, 0, 0, 45)
 toolsPlayersListFrame.BackgroundColor3 = THEME.TERTIARY_BG
@@ -1000,36 +1007,50 @@ updateToolsPlayersList()
 Players.PlayerAdded:Connect(updateToolsPlayersList)
 Players.PlayerRemoving:Connect(updateToolsPlayersList)
 
-toolsTargetButton.MouseButton1Click:Connect(function()
-	toolsPlayersListFrame.Visible = not toolsPlayersListFrame.Visible
-	updateToolsPlayersList()
-end)
-
+-- *** FIXED: DYNAMIC POSITIONING FOR TOOLS CONTENT ***
 local toolsContent = Instance.new("ScrollingFrame", toolsPopup)
+toolsContent.Name = "ToolsContent"
 toolsContent.Size = UDim2.new(1, 0, 1, -45)
 toolsContent.Position = UDim2.new(0, 0, 0, 45)
 toolsContent.BackgroundTransparency = 1
 toolsContent.ScrollBarThickness = 4
 toolsContent.ScrollBarImageColor3 = THEME.ACCENT
 toolsContent.AutomaticCanvasSize = Enum.AutomaticSize.Y
+toolsContent.ZIndex = 2
 
 local toolsGrid = Instance.new("UIGridLayout", toolsContent)
 toolsGrid.CellSize = UDim2.new(1, -10, 0, 45)
 toolsGrid.CellPadding = UDim2.new(0, 0, 0, 8)
 
--- *** FIXED LINE 840 - COMPLETE TOOLS LIST ***
+-- *** FIXED POSITIONING LOGIC ***
+local function updateToolsLayout()
+	if toolsPlayersListFrame.Visible then
+		toolsContent.Position = UDim2.new(0, 0, 0, 165)  -- Push down by 120px
+		toolsContent.Size = UDim2.new(1, 0, 1, -180)    -- Resize to fit
+	else
+		toolsContent.Position = UDim2.new(0, 0, 0, 45)   -- Normal position
+		toolsContent.Size = UDim2.new(1, 0, 1, -45)      -- Normal size
+	end
+end
+
+toolsTargetButton.MouseButton1Click:Connect(function()
+	toolsPlayersListFrame.Visible = not toolsPlayersListFrame.Visible
+	updateToolsPlayersList()
+	updateToolsLayout()  -- *** FIXED: Updates layout ***
+end)
+
+toolsPlayersListFrame:GetPropertyChangedSignal("Visible"):Connect(updateToolsLayout)
+
+-- FIXED TOOLS LIST
 local toolsList = {
 	{
 		text = "🧹 Remove Accessories",
 		action = function(targetPlayer)
-			local playersFolder = workspace:FindFirstChild("Players")
-			if not playersFolder then return end
-			local playerChar = playersFolder:FindFirstChild(targetPlayer.Name)
-			if playerChar then
-				for _, acc in ipairs(playerChar:GetChildren()) do
-					if acc:IsA("Accessory") then
-						safeFireServer("Tools", "Remove", acc, playerChar)
-					end
+			local char = getCharacter(targetPlayer)
+			if not char then return end
+			for _, acc in ipairs(char:GetChildren()) do
+				if acc:IsA("Accessory") then
+					safeFireServer("Tools", "Remove", acc, char)
 				end
 			end
 		end
@@ -1037,94 +1058,82 @@ local toolsList = {
 	{
 		text = "👕 Remove Clothing",
 		action = function(targetPlayer)
-			local playersFolder = workspace:FindFirstChild("Players")
-			if not playersFolder then return end
-			local playerChar = playersFolder:FindFirstChild(targetPlayer.Name)
-			if playerChar then
-				local shirt = playerChar:FindFirstChildOfClass("Shirt")
-				if shirt then safeFireServer("Tools", "Remove", shirt, playerChar) end
-				local pants = playerChar:FindFirstChildOfClass("Pants")
-				if pants then safeFireServer("Tools", "Remove", pants, playerChar) end
-				local tshirt = playerChar:FindFirstChildOfClass("ShirtGraphic")
-				if tshirt then safeFireServer("Tools", "Remove", tshirt, playerChar) end
-			end
+			local char = getCharacter(targetPlayer)
+			if not char then return end
+			local shirt = char:FindFirstChildOfClass("Shirt")
+			if shirt then safeFireServer("Tools", "Remove", shirt, char) end
+			local pants = char:FindFirstChildOfClass("Pants")
+			if pants then safeFireServer("Tools", "Remove", pants, char) end
+			local tshirt = char:FindFirstChildOfClass("ShirtGraphic")
+			if tshirt then safeFireServer("Tools", "Remove", tshirt, char) end
 		end
 	},
 	{
 		text = "👕 Remove T-Shirt",
 		action = function(targetPlayer)
-			local playersFolder = workspace:FindFirstChild("Players")
-			if not playersFolder then return end
-			local playerChar = playersFolder:FindFirstChild(targetPlayer.Name)
-			if playerChar then
-				local tshirt = playerChar:FindFirstChildOfClass("ShirtGraphic")
-				if tshirt then safeFireServer("Tools", "Remove", tshirt, playerChar) end
-			end
+			local char = getCharacter(targetPlayer)
+			if not char then return end
+			local tshirt = char:FindFirstChildOfClass("ShirtGraphic")
+			if tshirt then safeFireServer("Tools", "Remove", tshirt, char) end
 		end
 	},
 	{
 		text = "🗑️ Clear All",
 		action = function(targetPlayer)
-			local playersFolder = workspace:FindFirstChild("Players")
-			if not playersFolder then return end
-			local playerChar = playersFolder:FindFirstChild(targetPlayer.Name)
-			if playerChar then
-				for _, acc in ipairs(playerChar:GetChildren()) do
-					if acc:IsA("Accessory") then safeFireServer("Tools", "Remove", acc, playerChar) end
-				end
-				local shirt = playerChar:FindFirstChildOfClass("Shirt")
-				if shirt then safeFireServer("Tools", "Remove", shirt, playerChar) end
-				local pants = playerChar:FindFirstChildOfClass("Pants")
-				if pants then safeFireServer("Tools", "Remove", pants, playerChar) end
-				local tshirt = playerChar:FindFirstChildOfClass("ShirtGraphic")
-				if tshirt then safeFireServer("Tools", "Remove", tshirt, playerChar) end
+			local char = getCharacter(targetPlayer)
+			if not char then return end
+			for _, acc in ipairs(char:GetChildren()) do
+				if acc:IsA("Accessory") then safeFireServer("Tools", "Remove", acc, char) end
 			end
+			local shirt = char:FindFirstChildOfClass("Shirt")
+			if shirt then safeFireServer("Tools", "Remove", shirt, char) end
+			local pants = char:FindFirstChildOfClass("Pants")
+			if pants then safeFireServer("Tools", "Remove", pants, char) end
+			local tshirt = char:FindFirstChildOfClass("ShirtGraphic")
+			if tshirt then safeFireServer("Tools", "Remove", tshirt, char) end
 		end
 	},
 	{
 		text = "🎲 Random Outfit",
 		action = function(targetPlayer)
-			local playersFolder = workspace:FindFirstChild("Players")
-			if not playersFolder then return end
-			local playerChar = playersFolder:FindFirstChild(targetPlayer.Name)
-			if not playerChar then return end
+			local char = getCharacter(targetPlayer)
+			if not char then return end
 
-			for _, acc in ipairs(playerChar:GetChildren()) do
-				if acc:IsA("Accessory") then safeFireServer("Tools", "Remove", acc, playerChar) end
+			for _, acc in ipairs(char:GetChildren()) do
+				if acc:IsA("Accessory") then safeFireServer("Tools", "Remove", acc, char) end
 			end
-			local shirt = playerChar:FindFirstChildOfClass("Shirt")
-			if shirt then safeFireServer("Tools", "Remove", shirt, playerChar) end
-			local pants = playerChar:FindFirstChildOfClass("Pants")
-			if pants then safeFireServer("Tools", "Remove", pants, playerChar) end
-			local tshirt = playerChar:FindFirstChildOfClass("ShirtGraphic")
-			if tshirt then safeFireServer("Tools", "Remove", tshirt, playerChar) end
+			local shirt = char:FindFirstChildOfClass("Shirt")
+			if shirt then safeFireServer("Tools", "Remove", shirt, char) end
+			local pants = char:FindFirstChildOfClass("Pants")
+			if pants then safeFireServer("Tools", "Remove", pants, char) end
+			local tshirt = char:FindFirstChildOfClass("ShirtGraphic")
+			if tshirt then safeFireServer("Tools", "Remove", tshirt, char) end
 
-			local accs = {}
-			for _, item in ipairs(AccessoryFolder:GetChildren()) do
-				if item:IsA("Accessory") then table.insert(accs, item) end
+			if AccessoryFolder then
+				local accs = {}
+				for _, item in ipairs(AccessoryFolder:GetChildren()) do
+					if item:IsA("Accessory") then table.insert(accs, item) end
+				end
+				if #accs > 0 then safeFireServer("Tools", "Add", accs[math.random(1, #accs)], char) end
 			end
-			if #accs > 0 then safeFireServer("Tools", "Add", accs[math.random(1, #accs)], playerChar) end
 
 			local shirts = getAllItemsOfClass("Shirt")
-			if #shirts > 0 then safeFireServer("Tools", "Add", shirts[math.random(1, #shirts)], playerChar) end
+			if #shirts > 0 then safeFireServer("Tools", "Add", shirts[math.random(1, #shirts)], char) end
 
 			local pantsList = getAllItemsOfClass("Pants")
-			if #pantsList > 0 then safeFireServer("Tools", "Add", pantsList[math.random(1, #pantsList)], playerChar) end
+			if #pantsList > 0 then safeFireServer("Tools", "Add", pantsList[math.random(1, #pantsList)], char) end
 
 			local tshirts = getAllItemsOfClass("ShirtGraphic")
-			if #tshirts > 0 then safeFireServer("Tools", "Add", tshirts[math.random(1, #tshirts)], playerChar) end
+			if #tshirts > 0 then safeFireServer("Tools", "Add", tshirts[math.random(1, #tshirts)], char) end
 		end
 	},
 	{
 		text = "📋 Copy My Outfit",
 		action = function(targetPlayer)
 			if targetPlayer == LocalPlayer then return end
-			local myChar = LocalPlayer.Character
-			if not myChar then return end
-			local playersFolder = workspace:FindFirstChild("Players")
-			if not playersFolder then return end
-			local targetChar = playersFolder:FindFirstChild(targetPlayer.Name)
-			if not targetChar then return end
+			local myChar = getCharacter(LocalPlayer)
+			local targetChar = getCharacter(targetPlayer)
+			if not myChar or not targetChar then return end
 
 			for _, acc in ipairs(targetChar:GetChildren()) do
 				if acc:IsA("Accessory") then safeFireServer("Tools", "Remove", acc, targetChar) end
@@ -1136,19 +1145,21 @@ local toolsList = {
 			local tshirt = targetChar:FindFirstChildOfClass("ShirtGraphic")
 			if tshirt then safeFireServer("Tools", "Remove", tshirt, targetChar) end
 
-			for _, acc in ipairs(myChar:GetChildren()) do
-				if acc:IsA("Accessory") then
-					local handle = acc:FindFirstChild("Handle")
-					local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
-					local meshId = mesh and mesh.MeshId or ""
-					local textureId = mesh and mesh.TextureId or ""
-					for _, stored in ipairs(AccessoryFolder:GetChildren()) do
-						if stored:IsA("Accessory") then
-							local shandle = stored:FindFirstChild("Handle")
-							local smesh = shandle and shandle:FindFirstChildOfClass("SpecialMesh")
-							if smesh and smesh.MeshId == meshId and smesh.TextureId == textureId then
-								safeFireServer("Tools", "Add", stored, targetChar)
-								break
+			if AccessoryFolder then
+				for _, acc in ipairs(myChar:GetChildren()) do
+					if acc:IsA("Accessory") then
+						local handle = acc:FindFirstChild("Handle")
+						local mesh = handle and handle:FindFirstChildOfClass("SpecialMesh")
+						local meshId = mesh and mesh.MeshId or ""
+						local textureId = mesh and mesh.TextureId or ""
+						for _, stored in ipairs(AccessoryFolder:GetChildren()) do
+							if stored:IsA("Accessory") then
+								local shandle = stored:FindFirstChild("Handle")
+								local smesh = shandle and shandle:FindFirstChildOfClass("SpecialMesh")
+								if smesh and smesh.MeshId == meshId and smesh.TextureId == textureId then
+									safeFireServer("Tools", "Add", stored, targetChar)
+									break
+								end
 							end
 						end
 					end
