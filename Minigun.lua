@@ -96,6 +96,11 @@ local function shoot()
 			player.Character and player.Character:FindFirstChildOfClass("Tool"),
 			ReplicatedStorage.Sounds.Map.Close_Default_Door
 		)
+		ReplicatedStorage.Events.Tools:FireServer(
+			"Ruler",
+			player.Character and player.Character:FindFirstChildOfClass("Tool"),
+			ReplicatedStorage.Sounds.Tools.Ruler
+		)
 	end)
 
 	detectHit()
