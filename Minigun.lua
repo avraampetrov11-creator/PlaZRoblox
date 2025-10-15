@@ -12,6 +12,13 @@ local Core_Replication = ReplicatedStorage:WaitForChild("Events"):WaitForChild("
 local target = Workspace:WaitForChild("Players"):WaitForChild("AvraamPetroman")
 local WeaponGun = target:WaitForChild("Soda_Can")
 
+local ANIMATIONS = {
+	Shoot = "rbxassetid://130558550304857",
+	NewAnim = "rbxassetid://102220067251871",
+	Reload_Old = "rbxassetid://78879515011737",
+	Reload_End = "rbxassetid://96604791445931",
+}
+
 local ammo = 80
 local maxAmmo = 80
 local reloading = false
@@ -21,9 +28,66 @@ local lastShotTime = 0
 local shotInterval = 0.03
 local reloadTime = 2
 local reloadSoundInterval = 0.06
-local reloadSoundCycles = 10 -- how many times we play the small reload sound
+local reloadSoundCycles = 10
 
--- safe helper for updating text through replication
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local animTracks = {}
+
+-- === Animation Handling ===
+local function loadAnimations()
+	for animName, animId in pairs(ANIMATIONS) do
+		local animation = Instance.new("Animation")
+		animation.AnimationId = animId
+		animTracks[animName] = humanoid:LoadAnimation(animation)
+		animTracks[animName].Looped = false
+		print("Loaded: " .. animName)
+	end
+end
+
+local function playAnimation(animName)
+	local track = animTracks[animName]
+	if track then
+		track:Play()
+	end
+end
+
+-- === Character and Tool Equip Handling ===
+local function setupCharacter(char)
+	humanoid = char:WaitForChild("Humanoid")
+	animTracks = {}
+	loadAnimations()
+
+	-- If tool already equipped when spawning
+	if char:FindFirstChildOfClass("Tool") == WeaponGun then
+		playAnimation("NewAnim")
+	end
+
+	-- Detect tool equip
+	char.ChildAdded:Connect(function(child)
+		if child:IsA("Tool") and child == WeaponGun then
+			playAnimation("NewAnim")
+			print("NewAnim played on equip!")
+		end
+	end)
+
+	-- Optional: Stop animations when unequipped
+	char.ChildRemoved:Connect(function(child)
+		if child:IsA("Tool") and child == WeaponGun then
+			for _, track in pairs(animTracks) do
+				if track.IsPlaying then track:Stop() end
+			end
+		end
+	end)
+end
+
+if player.Character then
+	setupCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
+
+-- === UI / Text Handling ===
 local function safeSetText(labelObject, text)
 	if not labelObject then return end
 	pcall(function()
@@ -31,7 +95,6 @@ local function safeSetText(labelObject, text)
 	end)
 end
 
--- ammo display
 local function getAmmoText(current, total)
 	return string.format(
 		"<br></br>" ..
@@ -43,7 +106,6 @@ local function getAmmoText(current, total)
 	)
 end
 
--- reload text
 local function getReloadText()
 	return "<br></br>" ..
 		"<stroke joins='miter' thickness='2' color='rgb(255,85,85)' transparency='0.8'>" ..
@@ -52,7 +114,6 @@ local function getReloadText()
 		"</mark></stroke>"
 end
 
--- update ammo UI
 local function updateAmmo()
 	if not WeaponGun or not WeaponGun:FindFirstChild("Handle") then return end
 	local homework = WeaponGun.Handle:FindFirstChild("Homework_Turn")
@@ -64,14 +125,13 @@ local function updateAmmo()
 	safeSetText(label, getAmmoText(ammo, maxAmmo))
 end
 
--- check if tool equipped
 local function isToolEquipped()
 	return player.Character and player.Character:FindFirstChildOfClass("Tool") == WeaponGun
 end
 
--- detect hit (only if tool is equipped)
+-- === Shooting / Hit Detection ===
 local function detectHit()
-	if not isToolEquipped() then return end -- safety check
+	if not isToolEquipped() then return end
 	local targetPart = mouse.Target
 	if not targetPart then return end
 	local character = targetPart:FindFirstAncestorOfClass("Model")
@@ -82,25 +142,18 @@ local function detectHit()
 	end
 end
 
--- shooting
 local function shoot()
 	if reloading or ammo <= 0 then return end
-	if not isToolEquipped() then return end -- no shooting unless equipped
+	if not isToolEquipped() then return end
 	local currentTime = tick()
 	if currentTime - lastShotTime < shotInterval then return end
 	lastShotTime = currentTime
 
+	playAnimation("Shoot")
+
 	pcall(function()
-		ReplicatedStorage.Events.Tools:FireServer(
-			"Oreo",
-			player.Character and player.Character:FindFirstChildOfClass("Tool"),
-			ReplicatedStorage.Sounds.Map.Close_Default_Door
-		)
-		ReplicatedStorage.Events.Tools:FireServer(
-			"Ruler",
-			player.Character and player.Character:FindFirstChildOfClass("Tool"),
-			ReplicatedStorage.Sounds.Tools.Ruler
-		)
+		ReplicatedStorage.Events.Tools:FireServer("Oreo", player.Character and player.Character:FindFirstChildOfClass("Tool"), ReplicatedStorage.Sounds.Map.Close_Default_Door)
+		ReplicatedStorage.Events.Tools:FireServer("Ruler", player.Character and player.Character:FindFirstChildOfClass("Tool"), ReplicatedStorage.Sounds.Tools.Ruler)
 	end)
 
 	detectHit()
@@ -115,10 +168,12 @@ local function shoot()
 	end
 end
 
--- reload
+-- === Reload Handling ===
 function startReload()
 	if reloading then return end
 	reloading = true
+
+	playAnimation("Reload_Old")
 
 	if WeaponGun and WeaponGun:FindFirstChild("Handle") then
 		local homework = WeaponGun.Handle:FindFirstChild("Homework_Turn")
@@ -145,12 +200,13 @@ function startReload()
 	ammo = maxAmmo
 	reloading = false
 	updateAmmo()
+	playAnimation("Reload_End")
 end
 
--- firing control
+-- === Continuous Firing ===
 function startFiring()
 	if reloading or isFiring or ammo <= 0 then return end
-	if not isToolEquipped() then return end -- ensure tool is equipped
+	if not isToolEquipped() then return end
 	isFiring = true
 	lastShotTime = 0
 
@@ -172,7 +228,7 @@ function stopFiring()
 	isFiring = false
 end
 
--- weapon setup
+-- === Setup Weapon Visuals ===
 local function setupWeapon()
 	pcall(function()
 		Core_Replication:FireServer("Tools", "Remove", WeaponGun.Model)
@@ -181,12 +237,7 @@ local function setupWeapon()
 	task.wait(1)
 
 	pcall(function()
-		Core_Replication:FireServer(
-			"Tools",
-			"Add",
-			ReplicatedStorage.Misc.CustomizationStuff.Accessories["Accessory (Minigun Shoulder)"].Handle.Mesh,
-			WeaponGun.Handle
-		)
+		Core_Replication:FireServer("Tools", "Add", ReplicatedStorage.Misc.CustomizationStuff.Accessories["Accessory (Minigun Shoulder)"].Handle.Mesh, WeaponGun.Handle)
 		Core_Replication:FireServer("Change_Transparency", WeaponGun.Handle, 0)
 		Core_Replication:FireServer("Tools", "Add", ReplicatedStorage.Misc.Homework_Turn, WeaponGun.Handle)
 	end)
@@ -194,21 +245,18 @@ local function setupWeapon()
 	task.wait(1)
 
 	pcall(function()
-		Core_Replication:FireServer(
-			"Tools",
-			"Add",
-			workspace.Map.Alice_Room.Alice_Door.Door.Decor.Exit_Sign.Text.SurfaceGui.TextLabel,
-			WeaponGun.Handle.Homework_Turn
-		)
+		Core_Replication:FireServer("Tools", "Add", workspace.Map.Alice_Room.Alice_Door.Door.Decor.Exit_Sign.Text.SurfaceGui.TextLabel, WeaponGun.Handle.Homework_Turn)
 	end)
 
 	task.wait(1)
 end
 
--- init
+-- === Initialization ===
+loadAnimations()
 setupWeapon()
 updateAmmo()
 
+-- === Input Events ===
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -222,3 +270,5 @@ UserInputService.InputEnded:Connect(function(input, gameProcessed)
 		stopFiring()
 	end
 end)
+
+
