@@ -627,7 +627,7 @@ local function createAccessoryButton(accessory)
 	viewport.CurrentCamera = camera
 	local handle = clone:FindFirstChild("Handle")
 	if handle then
-		camera.CFrame = CFrame.new(handle.Position + Vector3.new(0, 0, 3), handle.Position)
+		camera.CFrame = CFrame.new(handle.Position + Vector3.new(0, 0, 2), handle.Position)
 	end
 
 	local nameLabel = Instance.new("TextLabel", button)
@@ -707,7 +707,7 @@ local function createClothingButton(item, fromCharacter)
 	fromLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 	fromLabel.BackgroundTransparency = 0.7
 	fromLabel.TextColor3 = THEME.TEXT_PRIMARY
-	fromLabel.Text = fromCharacter or "Unknown
+	fromLabel.Text = fromCharacter or "Unknown"
 	fromLabel.Font = Enum.Font.Gotham
 	fromLabel.TextSize = 11
 	Instance.new("UICorner", fromLabel).CornerRadius = THEME.SUB_BUTTON_RADIUS
