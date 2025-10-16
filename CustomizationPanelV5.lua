@@ -1,4 +1,3 @@
--- LocalScript (StarterPlayerScripts)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -6,13 +5,12 @@ local Core_Replication = ReplicatedStorage:WaitForChild("Events"):WaitForChild("
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 
--- === PROFESSIONAL THEME CONSTANTS ===
 local THEME = {
     PRIMARY_BG = Color3.fromRGB(15, 15, 20),
     SECONDARY_BG = Color3.fromRGB(25, 25, 30),
     TERTIARY_BG = Color3.fromRGB(35, 35, 40),
-    ACCENT = Color3.fromRGB(0, 162, 255),
-    ACCENT_GLOW = Color3.fromRGB(0, 200, 255),
+    ACCENT = Color3.fromRGB(138, 43, 226),
+    ACCENT_GLOW = Color3.fromRGB(186, 85, 211),
     TEXT_PRIMARY = Color3.fromRGB(255, 255, 255),
     TEXT_SECONDARY = Color3.fromRGB(180, 180, 185),
     DANGER = Color3.fromRGB(220, 50, 50),
@@ -23,11 +21,9 @@ local THEME = {
     SUB_BUTTON_RADIUS = UDim.new(0, 6)
 }
 
--- === SMOOTH TWEEN INFO ===
 local TWEEN_INFO = TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
 local GLOW_TWEEN = TweenInfo.new(0.15, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
--- === Helper Functions ===
 local function waitForChild(parent, childName, timeout)
 	timeout = timeout or 5
 	local start = tick()
@@ -81,28 +77,27 @@ end
 local function addSmoothHover(button, hoverColor)
     hoverColor = hoverColor or Color3.fromRGB(50, 50, 60)
     button.BackgroundColor3 = THEME.TERTIARY_BG
+    local originalSize = button.Size
     
     button.MouseEnter:Connect(function()
         TweenService:Create(button, TWEEN_INFO, {
             BackgroundColor3 = hoverColor,
-            Size = button.Size + UDim2.new(0, 4, 0, 4)
+            Size = originalSize + UDim2.new(0, 4, 0, 4)
         }):Play()
     end)
     
     button.MouseLeave:Connect(function()
         TweenService:Create(button, TWEEN_INFO, {
             BackgroundColor3 = THEME.TERTIARY_BG,
-            Size = button.Size - UDim2.new(0, 4, 0, 4)
+            Size = originalSize
         }):Play()
     end)
 end
 
--- *** FIXED: Get Character Function ***
 local function getCharacter(player)
     return player.Character or workspace:FindFirstChild(player.Name)
 end
 
--- [ALL YOUR FOLDER CREATION CODE - SAME AS BEFORE]
 local PlaceholderFolder = ReplicatedStorage.Homework_Related:WaitForChild("Answer_Types")
 local Misc = ReplicatedStorage:WaitForChild("Misc")
 
@@ -294,7 +289,6 @@ Players.PlayerAdded:Connect(function(player)
 	end
 end)
 
--- === PROFESSIONAL GUI SETUP ===
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "InventoryPanel"
 screenGui.ResetOnSpawn = false
@@ -311,7 +305,6 @@ local mainCorner = Instance.new("UICorner", mainFrame)
 mainCorner.CornerRadius = THEME.CORNER_RADIUS
 addOutline(mainFrame, 1)
 
--- TITLE BAR
 local titleBar = Instance.new("Frame", mainFrame)
 titleBar.Size = UDim2.new(1, 0, 0, 45)
 titleBar.BackgroundColor3 = THEME.SECONDARY_BG
@@ -320,7 +313,7 @@ local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, -160, 1, 0)
 title.Position = UDim2.new(0, 15, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "🎨 INVENTORY MANAGER"
+title.Text = "INVENTORY MANAGER"
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 title.TextColor3 = THEME.TEXT_PRIMARY
@@ -343,13 +336,12 @@ closeButton.MouseButton1Click:Connect(function()
     screenGui.Enabled = false
 end)
 
--- TARGET SELECTOR
 local mainTargetPlayer = LocalPlayer
 local mainTargetLabel = Instance.new("TextLabel", titleBar)
 mainTargetLabel.Size = UDim2.new(0, 140, 1, 0)
 mainTargetLabel.Position = UDim2.new(1, -185, 0, 0)
 mainTargetLabel.BackgroundTransparency = 1
-mainTargetLabel.Text = "🎯 " .. LocalPlayer.Name
+mainTargetLabel.Text = LocalPlayer.Name
 mainTargetLabel.Font = Enum.Font.GothamSemibold
 mainTargetLabel.TextSize = 14
 mainTargetLabel.TextColor3 = THEME.TEXT_SECONDARY
@@ -361,7 +353,6 @@ mainTargetButton.Position = UDim2.new(1, -185, 0, 0)
 mainTargetButton.BackgroundTransparency = 1
 mainTargetButton.Text = ""
 
--- PLAYERS LIST
 local mainPlayersListFrame = Instance.new("ScrollingFrame", mainFrame)
 mainPlayersListFrame.Size = UDim2.new(1, 0, 0, 120)
 mainPlayersListFrame.Position = UDim2.new(0, 0, 0, 45)
@@ -384,7 +375,7 @@ local function updateMainPlayersList()
 	end
 	for _, player in ipairs(Players:GetPlayers()) do
 		local btn = Instance.new("TextButton", mainPlayersListFrame)
-		btn.Text = "👤 " .. player.Name
+		btn.Text = player.Name
 		btn.Font = Enum.Font.Gotham
 		btn.TextSize = 15
 		btn.TextColor3 = THEME.TEXT_PRIMARY
@@ -395,7 +386,7 @@ local function updateMainPlayersList()
 		addSmoothHover(btn)
 		btn.MouseButton1Click:Connect(function()
 			mainTargetPlayer = player
-			mainTargetLabel.Text = "🎯 " .. player.Name
+			mainTargetLabel.Text = player.Name
 			mainPlayersListFrame.Visible = false
 		end)
 	end
@@ -411,7 +402,6 @@ mainTargetButton.MouseButton1Click:Connect(function()
 	updateMainPlayersList()
 end)
 
--- TABS
 local tabBar = Instance.new("Frame", mainFrame)
 tabBar.Size = UDim2.new(1, 0, 0, 40)
 tabBar.Position = UDim2.new(0, 0, 0, 45)
@@ -420,7 +410,7 @@ addOutline(tabBar, 1)
 
 local accessoriesTab = Instance.new("TextButton", tabBar)
 accessoriesTab.Size = UDim2.new(0.5, 0, 1, 0)
-accessoriesTab.Text = "💎 ACCESSORIES"
+accessoriesTab.Text = "ACCESSORIES"
 accessoriesTab.Font = Enum.Font.GothamBold
 accessoriesTab.TextSize = 14
 accessoriesTab.TextColor3 = THEME.TEXT_PRIMARY
@@ -432,7 +422,7 @@ addSmoothHover(accessoriesTab, THEME.ACCENT_GLOW)
 local clothingTab = Instance.new("TextButton", tabBar)
 clothingTab.Size = UDim2.new(0.5, 0, 1, 0)
 clothingTab.Position = UDim2.new(0.5, 0, 0, 0)
-clothingTab.Text = "👕 CLOTHING"
+clothingTab.Text = "CLOTHING"
 clothingTab.Font = Enum.Font.GothamBold
 clothingTab.TextSize = 14
 clothingTab.TextColor3 = THEME.TEXT_PRIMARY
@@ -441,7 +431,6 @@ Instance.new("UICorner", clothingTab).CornerRadius = THEME.BUTTON_RADIUS
 createGlowEffect(clothingTab)
 addSmoothHover(clothingTab)
 
--- CONTENT FRAME
 local contentFrame = Instance.new("Frame", mainFrame)
 contentFrame.Size = UDim2.new(1, 0, 1, -90)
 contentFrame.Position = UDim2.new(0, 0, 0, 85)
@@ -459,7 +448,6 @@ mainPlayersListFrame:GetPropertyChangedSignal("Visible"):Connect(function()
 	end
 end)
 
--- ACCESSORIES FRAME
 local accessoriesFrame = Instance.new("ScrollingFrame", contentFrame)
 accessoriesFrame.Size = UDim2.new(1, -20, 1, -10)
 accessoriesFrame.Position = UDim2.new(0, 10, 0, 5)
@@ -475,7 +463,6 @@ accGrid.CellPadding = UDim2.new(0, 12, 0, 12)
 accGrid.FillDirectionMaxCells = 4
 accGrid.SortOrder = Enum.SortOrder.Name
 
--- CLOTHING FRAMES
 local clothingFrame = Instance.new("Frame", contentFrame)
 clothingFrame.Size = UDim2.new(1, 0, 1, 0)
 clothingFrame.BackgroundTransparency = 1
@@ -488,7 +475,7 @@ addOutline(clothingSubTabBar, 1)
 
 local shirtsSubTab = Instance.new("TextButton", clothingSubTabBar)
 shirtsSubTab.Size = UDim2.new(1/3, 0, 1, 0)
-shirtsSubTab.Text = "👔 SHIRTS"
+shirtsSubTab.Text = "SHIRTS"
 shirtsSubTab.Font = Enum.Font.GothamBold
 shirtsSubTab.TextSize = 13
 shirtsSubTab.TextColor3 = THEME.TEXT_PRIMARY
@@ -500,7 +487,7 @@ addSmoothHover(shirtsSubTab, THEME.ACCENT_GLOW)
 local pantsSubTab = Instance.new("TextButton", clothingSubTabBar)
 pantsSubTab.Size = UDim2.new(1/3, 0, 1, 0)
 pantsSubTab.Position = UDim2.new(1/3, 0, 0, 0)
-pantsSubTab.Text = "👖 PANTS"
+pantsSubTab.Text = "PANTS"
 pantsSubTab.Font = Enum.Font.GothamBold
 pantsSubTab.TextSize = 13
 pantsSubTab.TextColor3 = THEME.TEXT_PRIMARY
@@ -512,7 +499,7 @@ addSmoothHover(pantsSubTab)
 local tshirtsSubTab = Instance.new("TextButton", clothingSubTabBar)
 tshirtsSubTab.Size = UDim2.new(1/3, 0, 1, 0)
 tshirtsSubTab.Position = UDim2.new(2/3, 0, 0, 0)
-tshirtsSubTab.Text = "👕 T-SHIRTS"
+tshirtsSubTab.Text = "T-SHIRTS"
 tshirtsSubTab.Font = Enum.Font.GothamBold
 tshirtsSubTab.TextSize = 13
 tshirtsSubTab.TextColor3 = THEME.TEXT_PRIMARY
@@ -573,7 +560,6 @@ tshirtsGrid.CellPadding = UDim2.new(0, 10, 0, 10)
 tshirtsGrid.FillDirectionMaxCells = 3
 tshirtsGrid.SortOrder = Enum.SortOrder.LayoutOrder
 
--- TAB SWITCHING
 local function switchTab(activeTab, inactiveTab, showFrame, hideFrame)
     TweenService:Create(activeTab, TWEEN_INFO, {BackgroundColor3 = THEME.ACCENT}):Play()
     TweenService:Create(inactiveTab, TWEEN_INFO, {BackgroundColor3 = THEME.TERTIARY_BG}):Play()
@@ -611,18 +597,19 @@ tshirtsSubTab.MouseButton1Click:Connect(function()
     pantsFrame.Visible = false
 end)
 
--- === PROFESSIONAL ITEM BUTTONS ===
 local function createAccessoryButton(accessory)
 	if not accessory:IsA("Accessory") then return end
 
 	local button = Instance.new("ImageButton", accessoriesFrame)
 	button.Name = accessory.Name
+	button.Size = UDim2.new(0, 110, 0, 110)
 	button.BackgroundColor3 = THEME.SECONDARY_BG
 	Instance.new("UICorner", button).CornerRadius = THEME.BUTTON_RADIUS
 	addOutline(button, 2)
 	createGlowEffect(button)
+	local originalSize = button.Size
 	addSmoothHover(button)
-
+	
 	local viewport = Instance.new("ViewportFrame", button)
 	viewport.Size = UDim2.new(1, 0, 0.8, 0)
 	viewport.BackgroundTransparency = 1
@@ -696,10 +683,12 @@ local function createClothingButton(item, fromCharacter)
 	
 	local button = Instance.new("ImageButton", targetFrame)
 	button.Name = item.Name
+	button.Size = UDim2.new(0, 130, 0, 150)
 	button.BackgroundColor3 = THEME.SECONDARY_BG
 	Instance.new("UICorner", button).CornerRadius = THEME.BUTTON_RADIUS
 	addOutline(button, 2)
 	createGlowEffect(button)
+	local originalSize = button.Size
 	addSmoothHover(button)
 	button:SetAttribute("FromCharacter", fromCharacter or "Unknown")
 
@@ -729,7 +718,6 @@ local function createClothingButton(item, fromCharacter)
 	updateClothingButtonsOrder(targetFrame)
 end
 
--- CONNECT ITEMS
 if AccessoryFolder then
 	for _, child in ipairs(AccessoryFolder:GetChildren()) do createAccessoryButton(child) end
 	AccessoryFolder.ChildAdded:Connect(createAccessoryButton)
@@ -754,7 +742,6 @@ if ClothingFolder then
 	end)
 end
 
--- SCANNING CODE
 local ClothesFolder = Misc:WaitForChild("Clothes")
 
 local function scanNPCCharactersForClothing()
@@ -882,7 +869,6 @@ ClothesFolder.DescendantAdded:Connect(function(item)
 	end
 end)
 
--- HOTKEYS
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.E then
@@ -894,7 +880,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	end
 end)
 
--- === Z BUTTON & TOOLS POPUP ===
 local zButton = Instance.new("TextButton", screenGui)
 zButton.Size = UDim2.new(0, 45, 0, 45)
 zButton.Position = UDim2.new(0, 10, 0, 10)
@@ -926,7 +911,7 @@ local toolsTitle = Instance.new("TextLabel", toolsTitleBar)
 toolsTitle.Size = UDim2.new(1, -180, 1, 0)
 toolsTitle.Position = UDim2.new(0, 15, 0, 0)
 toolsTitle.BackgroundTransparency = 1
-toolsTitle.Text = "🔧 TOOLS PANEL"
+toolsTitle.Text = "TOOLS PANEL"
 toolsTitle.Font = Enum.Font.GothamBold
 toolsTitle.TextSize = 18
 toolsTitle.TextColor3 = THEME.TEXT_PRIMARY
@@ -949,7 +934,7 @@ local toolsTargetLabel = Instance.new("TextLabel", toolsTitleBar)
 toolsTargetLabel.Size = UDim2.new(0, 140, 1, 0)
 toolsTargetLabel.Position = UDim2.new(1, -185, 0, 0)
 toolsTargetLabel.BackgroundTransparency = 1
-toolsTargetLabel.Text = "🎯 " .. LocalPlayer.Name
+toolsTargetLabel.Text = LocalPlayer.Name
 toolsTargetLabel.Font = Enum.Font.GothamSemibold
 toolsTargetLabel.TextSize = 14
 toolsTargetLabel.TextColor3 = THEME.TEXT_SECONDARY
@@ -961,9 +946,7 @@ toolsTargetButton.Position = UDim2.new(1, -185, 0, 0)
 toolsTargetButton.BackgroundTransparency = 1
 toolsTargetButton.Text = ""
 
--- *** FIXED: TOOLS PLAYER LIST WITH PROPER POSITIONING ***
 local toolsPlayersListFrame = Instance.new("ScrollingFrame", toolsPopup)
-toolsPlayersListFrame.Name = "ToolsPlayersList"
 toolsPlayersListFrame.Size = UDim2.new(1, 0, 0, 120)
 toolsPlayersListFrame.Position = UDim2.new(0, 0, 0, 45)
 toolsPlayersListFrame.BackgroundColor3 = THEME.TERTIARY_BG
@@ -985,7 +968,7 @@ local function updateToolsPlayersList()
 	end
 	for _, player in ipairs(Players:GetPlayers()) do
 		local btn = Instance.new("TextButton", toolsPlayersListFrame)
-		btn.Text = "👤 " .. player.Name
+		btn.Text = player.Name
 		btn.Font = Enum.Font.Gotham
 		btn.TextSize = 15
 		btn.TextColor3 = THEME.TEXT_PRIMARY
@@ -996,7 +979,7 @@ local function updateToolsPlayersList()
 		addSmoothHover(btn)
 		btn.MouseButton1Click:Connect(function()
 			toolsTargetPlayer = player
-			toolsTargetLabel.Text = "🎯 " .. player.Name
+			toolsTargetLabel.Text = player.Name
 			toolsPlayersListFrame.Visible = false
 		end)
 	end
@@ -1007,9 +990,7 @@ updateToolsPlayersList()
 Players.PlayerAdded:Connect(updateToolsPlayersList)
 Players.PlayerRemoving:Connect(updateToolsPlayersList)
 
--- *** FIXED: DYNAMIC POSITIONING FOR TOOLS CONTENT ***
 local toolsContent = Instance.new("ScrollingFrame", toolsPopup)
-toolsContent.Name = "ToolsContent"
 toolsContent.Size = UDim2.new(1, 0, 1, -45)
 toolsContent.Position = UDim2.new(0, 0, 0, 45)
 toolsContent.BackgroundTransparency = 1
@@ -1022,29 +1003,27 @@ local toolsGrid = Instance.new("UIGridLayout", toolsContent)
 toolsGrid.CellSize = UDim2.new(1, -10, 0, 45)
 toolsGrid.CellPadding = UDim2.new(0, 0, 0, 8)
 
--- *** FIXED POSITIONING LOGIC ***
 local function updateToolsLayout()
 	if toolsPlayersListFrame.Visible then
-		toolsContent.Position = UDim2.new(0, 0, 0, 165)  -- Push down by 120px
-		toolsContent.Size = UDim2.new(1, 0, 1, -180)    -- Resize to fit
+		toolsContent.Position = UDim2.new(0, 0, 0, 165)
+		toolsContent.Size = UDim2.new(1, 0, 1, -180)
 	else
-		toolsContent.Position = UDim2.new(0, 0, 0, 45)   -- Normal position
-		toolsContent.Size = UDim2.new(1, 0, 1, -45)      -- Normal size
+		toolsContent.Position = UDim2.new(0, 0, 0, 45)
+		toolsContent.Size = UDim2.new(1, 0, 1, -45)
 	end
 end
 
 toolsTargetButton.MouseButton1Click:Connect(function()
 	toolsPlayersListFrame.Visible = not toolsPlayersListFrame.Visible
 	updateToolsPlayersList()
-	updateToolsLayout()  -- *** FIXED: Updates layout ***
+	updateToolsLayout()
 end)
 
 toolsPlayersListFrame:GetPropertyChangedSignal("Visible"):Connect(updateToolsLayout)
 
--- FIXED TOOLS LIST
 local toolsList = {
 	{
-		text = "🧹 Remove Accessories",
+		text = "Remove Accessories",
 		action = function(targetPlayer)
 			local char = getCharacter(targetPlayer)
 			if not char then return end
@@ -1056,7 +1035,7 @@ local toolsList = {
 		end
 	},
 	{
-		text = "👕 Remove Clothing",
+		text = "Remove Clothing",
 		action = function(targetPlayer)
 			local char = getCharacter(targetPlayer)
 			if not char then return end
@@ -1069,7 +1048,7 @@ local toolsList = {
 		end
 	},
 	{
-		text = "👕 Remove T-Shirt",
+		text = "Remove T-Shirt",
 		action = function(targetPlayer)
 			local char = getCharacter(targetPlayer)
 			if not char then return end
@@ -1078,7 +1057,7 @@ local toolsList = {
 		end
 	},
 	{
-		text = "🗑️ Clear All",
+		text = "Clear All",
 		action = function(targetPlayer)
 			local char = getCharacter(targetPlayer)
 			if not char then return end
@@ -1094,7 +1073,7 @@ local toolsList = {
 		end
 	},
 	{
-		text = "🎲 Random Outfit",
+		text = "Random Outfit",
 		action = function(targetPlayer)
 			local char = getCharacter(targetPlayer)
 			if not char then return end
@@ -1128,7 +1107,7 @@ local toolsList = {
 		end
 	},
 	{
-		text = "📋 Copy My Outfit",
+		text = "Copy My Outfit",
 		action = function(targetPlayer)
 			if targetPlayer == LocalPlayer then return end
 			local myChar = getCharacter(LocalPlayer)
@@ -1205,7 +1184,6 @@ local toolsList = {
 	},
 }
 
--- CREATE TOOL BUTTONS
 for _, tool in ipairs(toolsList) do
 	local button = Instance.new("TextButton", toolsContent)
 	button.Text = tool.text
