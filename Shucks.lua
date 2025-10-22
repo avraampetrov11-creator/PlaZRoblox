@@ -1,5 +1,6 @@
-
-
+-- =======================
+-- SETTINGS
+-- =======================
 local Settings = {
     -- Animation IDs
     RunAnimId = "18897115785",
@@ -12,31 +13,21 @@ local Settings = {
     FOV_TransitionTime = 0.5,
 
     -- Run animation speeds
-    DefaultRunAnimSpeed = 0.6,        -- baseline run anim speed
-    CurrentRunAnimSpeed = 0.6,        -- value actively used by the RunAnimator (can be changed by Shuck)
+    DefaultRunAnimSpeed = 0.6,
+    CurrentRunAnimSpeed = 0.6,
 
     -- Shuck-specific
-    ShuckSpeed = 65,            -- walk speed while Shuck music plays
-    ShuckRunAnimSpeed = 0.8,    -- run animation speed while Shuck music plays
-    ShuckMaxDuration = 25,      -- safety fallback (seconds)
-
-    -- Cooldowns (seconds)
-    Cooldowns = {
-        Bleed = 7,
-        Warned = 8,
-        Heed = 60,
-        Fault = 3,
-        Modulation = 7,
-        Evade = 8,
-        Shuck = 26
-    },
+    ShuckSpeed = 65,
+    ShuckRunAnimSpeed = 0.8,
+    ShuckMaxDuration = 25,
 
     -- Visual / Impact settings
     ImpactPartsCount = 55,
     WorkspaceEnvName = "Thrown_WORKSPACE_ENV",
 }
-
--- Services
+-- =======================
+-- SERVICES
+-- =======================
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -47,12 +38,13 @@ local SoundService = game:GetService("SoundService")
 
 local lp = Players.LocalPlayer
 
--- Utility to get the current character safely
+-- =======================
+-- UTILITY FUNCTIONS
+-- =======================
 local function getChar()
     return lp and (lp.Character or lp.CharacterAdded:Wait())
 end
 
--- Create or get a workspace environment folder used for temporary parts
 local function ensureWorkspaceEnv()
     if getgenv().WorkspaceEnv and getgenv().WorkspaceEnv.Parent == workspace then
         return getgenv().WorkspaceEnv
@@ -65,59 +57,80 @@ local function ensureWorkspaceEnv()
 end
 local WorkspaceEnv = ensureWorkspaceEnv()
 
--- Small helper for system chat messages
-local function sendSystemMessage(text, color)
-    local msg = {
-        Color = color or Color3.fromRGB(255,255,255),
-        Font = Enum.Font.SourceSansBold,
-        TextSize = 18,
-        Text = text
-    }
+-- =======================
+-- ANIMATION FUNCTIONS
+-- =======================
+function playAnimation(animId, speed, duration)
+    local char = getChar()
+    if not char then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+
     pcall(function()
-        game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", msg)
-    end)
-end
+        local Anim = Instance.new("Animation")
+        Anim.AnimationId = "rbxassetid://" .. animId
+        local track = humanoid:LoadAnimation(Anim)
+        track.Priority = Enum.AnimationPriority.Action4
+        track:AdjustSpeed(speed or 1)
+        track:Play()
 
--- Typewriter-style UI info (kept from original)
-local function info(text)
-    spawn(function()
-        pcall(function() game.CoreGui.Revit:Destroy() end)
-        task.wait(0.1)
-        local screenGui = Instance.new("ScreenGui")
-        screenGui.Name = "Revit"
-        screenGui.Parent = game.CoreGui
-        screenGui.IgnoreGuiInset = true
-        screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-        screenGui.ResetOnSpawn = false
-
-        local label = Instance.new("TextLabel", screenGui)
-        label.Font = Enum.Font.Arcade
-        label.TextColor3 = Color3.new(1,1,1)
-        label.Size = UDim2.new(1, 0, 0.1, 0)
-        label.Position = UDim2.new(0,0,0,0)
-        label.BackgroundTransparency = 1
-        label.TextSize = 35
-        label.Text = ""
-
-        local function typewriter(lbl, str)
-            local out = ""
-            for i = 1, #str do
-                out = out .. str:sub(i,i)
-                lbl.Text = out
-                task.wait(.03)
-            end
+        if duration then
+            task.spawn(function()
+                task.wait(duration)
+                track:Stop(0.4)
+            end)
         end
-
-        typewriter(label, text)
-        task.wait(2)
-        screenGui:Destroy()
     end)
 end
 
--- Impact visual function
+-- =======================
+-- SOUND FUNCTIONS
+-- =======================
+function playSound(soundId, volume, fadeDuration)
+    pcall(function()
+        local s = Instance.new("Sound", game.CoreGui)
+        s.SoundId = "rbxassetid://" .. soundId
+        s.TimePosition = 0
+        s.PlaybackSpeed = 1
+        s.Volume = volume or 1
+        s:Play()
+        if fadeDuration then
+            task.spawn(function()
+                task.wait(fadeDuration)
+                s.Volume = 0.5
+                task.wait(fadeDuration)
+                s.Volume = 0.2
+                s:Destroy()
+            end)
+        end
+    end)
+end
+
+function playMusic(soundId, volume)
+    local sound = Instance.new("Sound")
+    sound.Name = "ShuckMusic"
+    sound.SoundId = "rbxassetid://" .. soundId
+    sound.Volume = volume or 3
+    sound.PlaybackSpeed = 1
+    sound.Looped = false
+    sound.Parent = SoundService
+    sound:Play()
+
+    task.delay(Settings.ShuckMaxDuration + 1, function()
+        pcall(function()
+            if sound and sound.IsPlaying then sound:Stop() end
+            if sound and sound.Parent then sound:Destroy() end
+        end)
+    end)
+
+    return sound
+end
+
+-- =======================
+-- IMPACT FUNCTION
+-- =======================
 local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
     spawn(function()
-        -- brief highlight flashes
         spawn(function()
             for i = 1, flashRepeats do
                 if workspace._Map and workspace._Map:FindFirstChild("Highlight") then
@@ -131,7 +144,6 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
             end
         end)
 
-        -- spawn cylinder parts around player
         spawn(function()
             for i = 1, amount do
                 task.spawn(function()
@@ -142,9 +154,7 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
 
                     local p = Instance.new("Part")
                     p.Shape = Enum.PartType.Cylinder
-                    p.Size = Vector3.new(math.random(1,77),
-                        math.random(55,99)/255,
-                        math.random(55,99)/255)
+                    p.Size = Vector3.new(math.random(1,77), math.random(55,99)/255, math.random(55,99)/255)
                     p.Name = "IMPACT"
                     p.Material = Enum.Material.Neon
                     p.Anchored = true
@@ -165,7 +175,6 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
 
         task.wait(0.4)
 
-        -- flicker highlight
         for i = 1, pulseRepeats do
             if workspace._Map and workspace._Map:FindFirstChild("Highlight") then
                 workspace._Map.Highlight.FillColor = Color3.new(1,1,1)
@@ -177,7 +186,6 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
             end
         end
 
-        -- fade out
         for i = 1, fadeRepeats do
             if workspace._Map and workspace._Map:FindFirstChild("Highlight") then
                 workspace._Map.Highlight.FillTransparency = 0 + i/35
@@ -191,616 +199,360 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
     end)
 end
 
--- Helper: safely disconnect stored global connections by name
-local function safeDisconnectGlobal(name)
-    pcall(function()
-        if getgenv()[name] and typeof(getgenv()[name].Disconnect) == "function" then
-            getgenv()[name]:Disconnect()
-        end
-        getgenv()[name] = nil
-    end)
-end
-
--- Menarehot / DEATHBLOW animation handler
-local function connectDeathblowHandler()
-    safeDisconnectGlobal("menarehotDEATHBLOW")
-    local char = getChar()
-    if not char then return end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-
-    getgenv().menarehotDEATHBLOW = humanoid.AnimationPlayed:Connect(function(track)
-        if track.Animation and track.Animation.AnimationId == "rbxassetid://15123665491" then
-            -- cinematic sequence (condensed)
-            pcall(function()
-                if game.CoreGui:FindFirstChild("HeadsetDisconnectedDialog") then
-                    local root = game.CoreGui.HeadsetDisconnectedDialog
-                    pcall(function() TweenService:Create(root['2'], TweenInfo.new(.5), { Volume = 0 }):Play() end)
-                    pcall(function() TweenService:Create(root['1'], TweenInfo.new(.5), { Volume = 0 }):Play() end)
-                end
-            end)
-
-            workspace.CurrentCamera.CameraType = 'Scriptable'
-            task.wait(0.04)
-            pcall(function() workspace.CurrentCamera:remove() end)
-            task.wait(0.1)
-            repeat task.wait() until Players.LocalPlayer.Character ~= nil
-            workspace.CurrentCamera.CameraSubject = Players.LocalPlayer.Character:FindFirstChildWhichIsA('Humanoid')
-            workspace.CurrentCamera.CameraType = "Scriptable"
-            Players.LocalPlayer.CameraMinZoomDistance = 0.5
-            Players.LocalPlayer.CameraMaxZoomDistance = 400
-            Players.LocalPlayer.CameraMode = "Classic"
-            if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head") then
-                Players.LocalPlayer.Character.Head.Anchored = false
+-- =======================
+-- MOVES LIST
+-- =======================
+local Moves = {
+    {
+        Name = "Bleed",
+        Slot = "1",
+        Cooldown = 7,
+        Func = function() end
+    },
+    {
+        Name = "Warned",
+        Slot = "2",
+        Cooldown = 8,
+        Func = function() end
+    },
+    {
+        Name = "Heed",
+        Slot = "3",
+        Cooldown = 60,
+        Func = function()
+  
             end
+        },
+    {
+        Name = "Fault",
+        Slot = "4",
+        Cooldown = 3,
+        Func = function() end
+    },
+ 
+    {
+        Name = "Dodge",
+        Slot = "5",
+        Cooldown = 8,
+        Func = function()
+            playAnimation("18435535291", 1, 0.3)
+            playSound("7094593247", 1.5, 0.4)
 
-            impct(55, 15, 5, 5)
+            task.spawn(function()
+                local Player = lp
+                local BodyParts = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
 
-            local Anim = Instance.new("Animation")
-            Anim.AnimationId = "rbxassetid://15123665491"
-            local dbAnim = humanoid:LoadAnimation(Anim)
-            dbAnim:Play()
-            dbAnim:AdjustSpeed(1)
-            dbAnim.Priority = Enum.AnimationPriority.Action
+                local function AfterImage(color3, material, duration, trans)
+                    for _, v in pairs(Player.Character:GetChildren()) do
+                        if table.find(BodyParts, v.Name) then
+                            local part = Instance.new("Part")
+                            part.Anchored = true
+                            part.CanCollide = false
+                            part.Massless = true
+                            part.CFrame = v.CFrame
+                            part.Size = v.Size
+                            part.Transparency = trans
+                            part.Color = color3
+                            part.Material = Enum.Material[material]
 
-            spawn(function()
-                local ok, v = pcall(function()
-                    return ReplicatedStorage.Resources and ReplicatedStorage.Resources:FindFirstChild("FuneralEffect") and ReplicatedStorage.Resources.FuneralEffect:Clone()
-                end)
-                if ok and v then
-                    v.Parent = WorkspaceEnv
-                    v.Anchored = true
-                    if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Right Arm") then
-                        v.CFrame = Players.LocalPlayer.Character['Right Arm'].CFrame * CFrame.new(0,-1,0)
-                    end
-                    task.wait(7)
-                    v:Destroy()
-                end
-            end)
-
-            spawn(function()
-                if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                    workspace.CurrentCamera.CFrame = Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(-5,0,-5) * CFrame.Angles(0, math.rad(240), 0)
-                    task.wait(1)
-                    workspace.CurrentCamera.CFrame = Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(10,10,5) * CFrame.Angles(math.rad(-60), math.rad(5), 0)
-                end
-
-                impct(450, 1, 100, 1)
-                task.wait(.3)
-            end)
-
-            task.wait(3)
-            workspace.CurrentCamera.CameraType = "Custom"
-            pcall(function()
-                if game.CoreGui:FindFirstChild("HeadsetDisconnectedDialog") then
-                    local root = game.CoreGui.HeadsetDisconnectedDialog
-                    pcall(function() TweenService:Create(root['2'], TweenInfo.new(1.5), { Volume = .5 }):Play() end)
-                    pcall(function() TweenService:Create(root['1'], TweenInfo.new(.5), { Volume = 0 }):Play() end)
-                end
-            end)
-        end
-    end)
-end
-
--- Another cinematic animation handler
-local function connectCinematicHandler()
-    safeDisconnectGlobal("yoinkpeni")
-    local char = getChar()
-    if not char then return end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if not humanoid then return end
-
-    getgenv().yoinkpeni = humanoid.AnimationPlayed:Connect(function(track)
-        if track.Animation and track.Animation.AnimationId == "rbxassetid://14920779925" then
-            pcall(function()
-                if game.CoreGui:FindFirstChild("HeadsetDisconnectedDialog") then
-                    local root = game.CoreGui.HeadsetDisconnectedDialog
-                    pcall(function() TweenService:Create(root['2'], TweenInfo.new(.5), { Volume = 0 }):Play() end)
-                    pcall(function() TweenService:Create(root['1'], TweenInfo.new(.5), { Volume = 0 }):Play() end)
-                end
-            end)
-            workspace.CurrentCamera.CameraType = 'Scriptable'
-            task.wait(.1)
-            pcall(function() workspace.CurrentCamera:remove() end)
-            task.wait(.1)
-            repeat task.wait() until Players.LocalPlayer.Character ~= nil
-            workspace.CurrentCamera.CameraSubject = Players.LocalPlayer.Character:FindFirstChildWhichIsA('Humanoid')
-            workspace.CurrentCamera.CameraType = "Scriptable"
-            Players.LocalPlayer.CameraMinZoomDistance = 0.5
-            Players.LocalPlayer.CameraMaxZoomDistance = 400
-            Players.LocalPlayer.CameraMode = "Classic"
-            if Players.LocalPlayer.Character and Players.LocalPlayer.Character:FindFirstChild("Head") then
-                Players.LocalPlayer.Character.Head.Anchored = false
-            end
-
-            local Anim = Instance.new("Animation")
-            Anim.AnimationId = "rbxassetid://17278415853"
-            local k = humanoid:LoadAnimation(Anim)
-            k:Play()
-            k.TimePosition = 4.5
-            k:AdjustSpeed(1)
-            k.Priority = Enum.AnimationPriority.Action4
-
-            spawn(function()
-                workspace.CurrentCamera.CFrame = Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(-5,0,-5) * CFrame.Angles(0, math.rad(240), 0)
-                task.wait(1.5)
-                workspace.CurrentCamera.CFrame = Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(5,35,15) * CFrame.Angles(math.rad(50), 0, 0)
-                task.wait(2)
-                workspace.CurrentCamera.CameraType = 'Custom'
-            end)
-
-            impct(155, 15, 55, 55)
-            task.wait(1)
-            pcall(function()
-                if game.CoreGui:FindFirstChild("HeadsetDisconnectedDialog") then
-                    local root = game.CoreGui.HeadsetDisconnectedDialog
-                    pcall(function() TweenService:Create(root['2'], TweenInfo.new(1.5), { Volume = .5 }):Play() end)
-                    pcall(function() TweenService:Create(root['1'], TweenInfo.new(.5), { Volume = 0 }):Play() end)
-                end
-            end)
-        end
-    end)
-end
-
--- ---------- Hotbar naming and UI setup ----------
-local function setHotbarNames()
-    local mapping = {
-        ["1"] = "Bleed",
-        ["2"] = "Warned",
-        ["3"] = "Heed",
-        ["4"] = "Fault",
-        ["5"] = "Modulation",
-        ["6"] = "Evade",
-        ["7"] = "Shuck"
-    }
-    pcall(function()
-        for slot, name in pairs(mapping) do
-            local gui = lp.PlayerGui:FindFirstChild("Hotbar") and lp.PlayerGui.Hotbar:FindFirstChild("Backpack") and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar") and lp.PlayerGui.Hotbar.Backpack.Hotbar:FindFirstChild(slot)
-            if gui and gui.Base then
-                gui.Visible = true
-                gui.Base.Reuse.Visible = false
-                gui.Base.ToolName.Text = name
-            end
-        end
-    end)
-end
-pcall(setHotbarNames)
-
--- ---------- Modulation (slot 5) ----------
-local function Modulation()
-    local vim = game:GetService("VirtualInputManager")
-    local AlreadyHit = false
-
-    if getgenv().MapLoad ~= true then
-        getgenv().MapLoad = true
-        local v = Instance.new('Model', workspace)
-        v.Name = '_Map'
-        task.wait(4)
-        local parts = workspace:FindFirstChild("Map") and workspace.Map:GetDescendants() or {}
-        for _, part in ipairs(parts) do
-            if part.Parent and part.Parent:IsA("Folder") then
-                part.Parent = v
-            end
-        end
-        local h = Instance.new('Highlight', v)
-        h.DepthMode = Enum.HighlightDepthMode.Occluded
-        h.FillTransparency = 0
-        h.FillColor = Color3.fromRGB(0,0,0)
-        h.OutlineTransparency = 0
-    end
-
-    local char = getChar()
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-
-    if workspace:FindFirstChild("Live") then
-        for _, target in pairs(workspace.Live:GetChildren()) do
-            if target ~= char and target:FindFirstChild("Torso") and target:FindFirstChildOfClass("Humanoid") and target:FindFirstChild("HumanoidRootPart") then
-                local torso = target:FindFirstChild("Torso")
-                local hum = target:FindFirstChildOfClass("Humanoid")
-                local otherHRP = target:FindFirstChild("HumanoidRootPart")
-                if torso and hum and otherHRP and hrp then
-                    if (torso.Position - hrp.Position).Magnitude <= 77 then
-                        if AlreadyHit then return end
-                        if target:GetAttribute('LastHit') == char.Name then
-                            AlreadyHit = true
-                            spawn(function()
-                                for i = 1, 40 do
-                                    hrp.CFrame = otherHRP.CFrame * CFrame.new(0,0,-35 + i) * CFrame.Angles(math.rad(180), 0, 0)
-                                    task.wait(.02)
-                                end
-                                task.wait(.4)
-                                for i = 1, 40 do
-                                    hrp.CFrame = otherHRP.CFrame * CFrame.new(0,0,-5) * CFrame.Angles(0, math.rad(180), 0)
-                                    task.wait(.02)
-                                end
-                            end)
-                            task.wait(.01)
-                            pcall(function()
-                                vim:SendKeyEvent(true, Enum.KeyCode.Q, false, workspace)
-                            end)
+                            if v.Name == "Head" then
+                                local mesh = Instance.new("SpecialMesh", part)
+                                mesh.MeshType = Enum.MeshType.Head
+                                mesh.Scale = Vector3.new(1.25,1.25,1.25)
+                            end
+                            part.Parent = WorkspaceEnv
+                            Debris:AddItem(part, duration)
                         end
                     end
                 end
-            end
-        end
-    end
-end
 
--- Bind Modulation to UI slot 5 and key 5
-do
-    pcall(function()
-        local hb5 = lp.PlayerGui.Hotbar.Backpack.Hotbar["5"]
-        local cdTemplate = lp.PlayerGui.Hotbar.Backpack.LocalScript:FindFirstChild("Cooldown")
-        if hb5 and hb5.Base and cdTemplate then
-            hb5.Visible = true
-            hb5.Base.Reuse.Visible = false
-            hb5.Base.ToolName.Text = "Modulation"
-            UserInputService.InputBegan:Connect(function(input, processed)
-                if processed then return end
-                if input.KeyCode == Enum.KeyCode.Five and not hb5.Base:FindFirstChild("Cooldown") then
-                    spawn(Modulation)
-                    local deez = cdTemplate:Clone()
-                    deez.Parent = hb5.Base
-                    TweenService:Create(deez, TweenInfo.new(Settings.Cooldowns.Modulation, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), { Size = UDim2.new(1,0,0,0) }):Play()
-                    task.wait(Settings.Cooldowns.Modulation)
-                    deez:Destroy()
-                end
-            end)
-            hb5.Base.MouseButton1Click:Connect(function()
-                if not hb5.Base:FindFirstChild("Cooldown") then
-                    spawn(Modulation)
-                    local deez = cdTemplate:Clone()
-                    deez.Parent = hb5.Base
-                    TweenService:Create(deez, TweenInfo.new(Settings.Cooldowns.Modulation, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), { Size = UDim2.new(1,0,0,0) }):Play()
-                    task.wait(Settings.Cooldowns.Modulation)
-                    deez:Destroy()
-                end
-            end)
-        end
-    end)
-end
-
--- Evade (slot 6)
-local function Evade()
-    task.spawn(function()
-        local Player = lp
-        local BodyParts = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
-
-        local function AfterImage(color3, material, duration, trans)
-            for _, v in pairs(Player.Character:GetChildren()) do
-                if table.find(BodyParts, v.Name) then
+                local function createTrail(duration)
                     local part = Instance.new("Part")
                     part.Anchored = true
                     part.CanCollide = false
+                    part.CanTouch = false
+                    part.CanQuery = false
                     part.Massless = true
-                    part.CFrame = v.CFrame
-                    part.Size = v.Size
-                    part.Transparency = trans
-                    part.Color = color3
-                    part.Material = Enum.Material[material]
-                    TweenService:Create(part, TweenInfo.new(duration), { Transparency = 1 }):Play()
-                    if v.Name == "Head" then
-                        local mesh = Instance.new("SpecialMesh", part)
-                        mesh.MeshType = Enum.MeshType.Head
-                        mesh.Scale = Vector3.new(1.25,1.25,1.25)
+                    if Player.Character and Player.Character:FindFirstChild("Torso") then
+                        part.Position = Player.Character.Torso.Position + Vector3.new(math.random(-5,5), math.random(-5,5), math.random(-5,5))
+                        part.CFrame = CFrame.lookAt(part.Position, part.Position + Player.Character.Torso.Velocity) * CFrame.new(0,0,math.random(-3,0)) * CFrame.Angles(math.rad(90), math.rad(90), 0)
                     end
+                    part.Size = Vector3.new(0.25, 0.25, 5)
+                    part.Material = Enum.Material.Neon
                     part.Parent = WorkspaceEnv
+                    TweenService:Create(part, TweenInfo.new(duration), { Size = Vector3.new(0.1,0.1, part.Size.Z + 1), Transparency = 1, Position = part.Position + Vector3.new(math.random(-15,15),0,0) }):Play()
                     Debris:AddItem(part, duration)
+                    local mesh = Instance.new("SpecialMesh", part)
+                    mesh.MeshType = Enum.MeshType.Sphere
                 end
-            end
-        end
 
-        local function createTrail(duration)
-            local part = Instance.new("Part")
-            part.Anchored = true
-            part.CanCollide = false
-            part.CanTouch = false
-            part.CanQuery = false
-            part.Massless = true
-            if Player.Character and Player.Character:FindFirstChild("Torso") then
-                part.Position = Player.Character.Torso.Position + Vector3.new(math.random(-5,5), math.random(-5,5), math.random(-5,5))
-                part.CFrame = CFrame.lookAt(part.Position, part.Position + Player.Character.Torso.Velocity) * CFrame.new(0,0,math.random(-3,0)) * CFrame.Angles(math.rad(90), math.rad(90), 0)
-            end
-            part.Size = Vector3.new(0.25, 0.25, 5)
-            part.Material = Enum.Material.Neon
-            part.Parent = WorkspaceEnv
-            TweenService:Create(part, TweenInfo.new(duration), { Size = Vector3.new(0.1,0.1, part.Size.Z + 1), Transparency = 1, Position = part.Position + Vector3.new(math.random(-15,15),0,0) }):Play()
-            Debris:AddItem(part, duration)
-            local mesh = Instance.new("SpecialMesh", part)
-            mesh.MeshType = Enum.MeshType.Sphere
-        end
-
-        for i = 1, 20 do
-            createTrail(1)
-            AfterImage(Color3.fromRGB(255,255,255), "Neon", 0.6, 0.2)
-            task.wait(.02)
-        end
-    end)
-
-    local char = getChar()
-    if not char then return end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    if humanoid then
-        local Anim = Instance.new("Animation")
-        Anim.AnimationId = "rbxassetid://18435535291"
-        local k = humanoid:LoadAnimation(Anim)
-        k:Play()
-        k.Priority = Enum.AnimationPriority.Action4
-        k:AdjustSpeed(1)
-        spawn(function() task.wait(.3); k:Stop(.4) end)
-    end
-
-    pcall(function()
-        local s = Instance.new('Sound', game.CoreGui)
-        s.SoundId = 'rbxassetid://7094593247'
-        s.TimePosition = 0
-        s.PlaybackSpeed = 1
-        s.Volume = 1.5
-        s:Play()
-        task.spawn(function()
-            task.wait(.4); s.Volume = .5; task.wait(.4); s.Volume = .2; s:Destroy()
-        end)
-    end)
-
-    local char2 = getChar()
-    if not char2 then return end
-    local hrp = char2:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    local rnd = math.random(1,3)
-    if rnd == 1 then
-        for i = 1, 35 do
-            if char2:FindFirstChild("Torso") then
-                char2.Torso.DashSpin:Emit(1)
-                char2.Torso.DashSpin1:Emit(1)
-            end
-            hrp.CFrame = hrp.CFrame * CFrame.new(.8,0,.8)
-            task.wait(.01)
-        end
-    elseif rnd == 2 then
-        for i = 1, 35 do
-            if char2:FindFirstChild("Torso") then
-                char2.Torso.DashSpin:Emit(1)
-                char2.Torso.DashSpin1:Emit(1)
-            end
-            hrp.CFrame = hrp.CFrame * CFrame.new(-.8,0,.8)
-            task.wait(.01)
-        end
-    else
-        for i = 1, 35 do
-            if char2:FindFirstChild("Torso") then
-                char2.Torso.DashSpin:Emit(1)
-                char2.Torso.DashSpin1:Emit(1)
-            end
-            hrp.CFrame = hrp.CFrame * CFrame.new(0,0,.8)
-            task.wait(.01)
-        end
-    end
-end
-
--- Bind Evade to slot 6 and key 6
-do
-    pcall(function()
-        local hotb6 = lp.PlayerGui.Hotbar.Backpack.Hotbar["6"]
-        local cdTemplate = lp.PlayerGui.Hotbar.Backpack.LocalScript:FindFirstChild("Cooldown")
-        if hotb6 and hotb6.Base and cdTemplate then
-            hotb6.Visible = true
-            hotb6.Base.Reuse.Visible = false
-            hotb6.Base.ToolName.Text = "Evade"
-            UserInputService.InputBegan:Connect(function(input, processed)
-                if processed then return end
-                if input.KeyCode == Enum.KeyCode.Six and not hotb6.Base:FindFirstChild("Cooldown") then
-                    spawn(Evade)
-                    local deez = cdTemplate:Clone()
-                    deez.Parent = hotb6.Base
-                    TweenService:Create(deez, TweenInfo.new(Settings.Cooldowns.Evade, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), { Size = UDim2.new(1,0,0,0) }):Play()
-                    task.wait(Settings.Cooldowns.Evade)
-                    deez:Destroy()
+                for i = 1, 20 do
+                    createTrail(1)
+                    AfterImage(Color3.fromRGB(255,255,255), "Neon", 0.6, 0.2)
+                    task.wait(0.02)
                 end
             end)
-            hotb6.Base.MouseButton1Click:Connect(function()
-                if not hotb6.Base:FindFirstChild("Cooldown") then
-                    spawn(Evade)
-                    local deez = cdTemplate:Clone()
-                    deez.Parent = hotb6.Base
-                    TweenService:Create(deez, TweenInfo.new(Settings.Cooldowns.Evade, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), { Size = UDim2.new(1,0,0,0) }):Play()
-                    task.wait(Settings.Cooldowns.Evade)
-                    deez:Destroy()
+
+            local char2 = getChar()
+            if not char2 then return end
+            local hrp = char2:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+
+            local rnd = math.random(1,3)
+            if rnd == 1 then
+                for i = 1, 35 do
+                    if char2:FindFirstChild("Torso") then
+                        char2.Torso.DashSpin:Emit(1)
+                        char2.Torso.DashSpin1:Emit(1)
+                    end
+                    hrp.CFrame = hrp.CFrame * CFrame.new(0.8,0,0.8)
+                    task.wait(0.01)
                 end
-            end)
-        end
-    end)
-end
-
--- ---------- Shuck (slot 7): full implementation ----------
--- Music function used by Shuck. Returns the Sound so we can detect Ended.
-local function Music()
-    local sound = Instance.new("Sound")
-    sound.Name = "ShuckMusic"
-    sound.SoundId = "rbxassetid://89192934241765"
-    sound.Volume = 3
-    sound.PlaybackSpeed = 1
-    sound.Looped = false
-    sound.Parent = SoundService
-    sound:Play()
-
-    -- safety cleanup
-    task.delay(Settings.ShuckMaxDuration + 1, function()
-        pcall(function()
-            if sound and sound.IsPlaying then
-                sound:Stop()
+            elseif rnd == 2 then
+                for i = 1, 35 do
+                    if char2:FindFirstChild("Torso") then
+                        char2.Torso.DashSpin:Emit(1)
+                        char2.Torso.DashSpin1:Emit(1)
+                    end
+                    hrp.CFrame = hrp.CFrame * CFrame.new(-0.8,0,0.8)
+                    task.wait(0.01)
+                end
+            else
+                for i = 1, 35 do
+                    if char2:FindFirstChild("Torso") then
+                        char2.Torso.DashSpin:Emit(1)
+                        char2.Torso.DashSpin1:Emit(1)
+                    end
+                    hrp.CFrame = hrp.CFrame * CFrame.new(0,0,0.8)
+                    task.wait(0.01)
+                end
             end
-            if sound and sound.Parent then
-                sound:Destroy()
-            end
-        end)
-    end)
-
-    return sound
-end
-
-local function Shuck()
-    if getgenv().ShuckLock then return end
-    getgenv().ShuckLock = true
-
-    local char = getChar()
-    if not char then getgenv().ShuckLock = false; return end
-    local humanoid = char:FindFirstChildOfClass("Humanoid")
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-
-    -- camera pulse
-    pcall(function()
-        if workspace.CurrentCamera and hrp then
-            local origCFrame = workspace.CurrentCamera.CFrame
-            workspace.CurrentCamera.CameraType = "Scriptable"
-            workspace.CurrentCamera.CFrame = hrp.CFrame * CFrame.new(0,5,-10) * CFrame.Angles(math.rad(-10),0,0)
-            task.wait(0.25)
-            workspace.CurrentCamera.CFrame = origCFrame
-            workspace.CurrentCamera.CameraType = "Custom"
         end
-    end)
+    },
+    {
+        Name = "Aw Shuck",
+        Slot = "6",
+        Cooldown = 26, 
+        Func = function()
+            if getgenv().ShuckLock then return end
+            getgenv().ShuckLock = true
 
-    -- play short anim
-    pcall(function()
-        if humanoid then
-            local Anim = Instance.new("Animation")
-            Anim.AnimationId = "rbxassetid://13499771836"
-            local track = humanoid:LoadAnimation(Anim)
-            track.Priority = Enum.AnimationPriority.Action
-            track:Play()
-            task.spawn(function() task.wait(5); track:Stop() end)
-        end
-    end)
+            local char = getChar()
+            if not char then getgenv().ShuckLock = false; return end
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            local hrp = char:FindFirstChild("HumanoidRootPart")
 
-    -- visual flash & impact
-    pcall(function() impct(80, 10, 25, 10) end)
-
-    -- spawn radial parts and particles
-    spawn(function()
-        if not hrp then return end
-        for i = 1, 24 do
-            local p = Instance.new("Part")
-            p.Size = Vector3.new(1.5,1.5,1.5)
-            p.Shape = Enum.PartType.Ball
-            p.Material = Enum.Material.Neon
-            p.Transparency = 0.1
-            p.Anchored = true
-            p.CanCollide = false
-            local angle = (i/24) * math.pi * 2
-            p.CFrame = hrp.CFrame * CFrame.new(math.cos(angle)*6, math.random(-1,3), math.sin(angle)*6)
-            p.Parent = WorkspaceEnv
-            local v = TweenService:Create(p, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = p.Position + Vector3.new(math.cos(angle)*12, 6, math.sin(angle)*12), Transparency = 1, Size = Vector3.new(0.1,0.1,0.1) })
-            v:Play()
-            Debris:AddItem(p, 1)
-            task.wait(0.02)
-        end
-    end)
-
-    -- Play music and apply movement/anim changes while it plays
-    local sound = nil
-    pcall(function()
-        sound = Music()
-    end)
-
-    -- Save previous values to restore later
-    local prevRunSpeed = Settings.RunSpeed
-
-    -- determine current anim speed
-    local prevAnimSpeed = Settings.CurrentRunAnimSpeed or Settings.DefaultRunAnimSpeed
-    if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
-        pcall(function()
-            -- capture the current speed in a safe way
-            prevAnimSpeed = getgenv().RunAnimator.animTrack and (getgenv().RunAnimator.animTrack.Speed or prevAnimSpeed) or prevAnimSpeed
-        end)
-    end
-
-    -- Apply Shuck overrides
-    Settings.RunSpeed = Settings.ShuckSpeed
-    getgenv().ConstantSpeed = true
-    Settings.ConstantSpeed = true
-
-    -- set the active requested run anim speed (the RunAnimator loop will apply it every tick)
-    Settings.CurrentRunAnimSpeed = Settings.ShuckRunAnimSpeed
-    if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
-        pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
-    end
-
-    -- force humanoid walk speed immediately
-    pcall(function()
-        if humanoid then humanoid.WalkSpeed = Settings.ShuckSpeed end
-    end)
-
-    local function restoreShuck()
-        -- restore run speed and anim speed
-        Settings.RunSpeed = prevRunSpeed or 45
-        Settings.CurrentRunAnimSpeed = prevAnimSpeed or Settings.DefaultRunAnimSpeed
-        if getgenv().RunAnimator and prevAnimSpeed and getgenv().RunAnimator.animTrack then
-            pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
-        end
-        -- restore ConstantSpeed global (leave it as it was globally)
-        Settings.ConstantSpeed = getgenv().ConstantSpeed
-        getgenv().ShuckLock = false
-    end
-
-    if sound then
-        local conn
-        conn = sound.Ended:Connect(function()
             pcall(function()
-                if sound and sound.IsPlaying then sound:Stop() end
-                if sound and sound.Parent then sound:Destroy() end
+                if workspace.CurrentCamera and hrp then
+                    local origCFrame = workspace.CurrentCamera.CFrame
+                    workspace.CurrentCamera.CameraType = "Scriptable"
+                    workspace.CurrentCamera.CFrame = hrp.CFrame * CFrame.new(0,5,-10) * CFrame.Angles(math.rad(-10),0,0)
+                    task.wait(0.25)
+                    workspace.CurrentCamera.CFrame = origCFrame
+                    workspace.CurrentCamera.CameraType = "Custom"
+                end
             end)
-            pcall(function() if conn then conn:Disconnect() end end)
-            restoreShuck()
-        end)
 
-        task.delay(Settings.ShuckMaxDuration, function()
-            if sound and sound.IsPlaying then
-                pcall(function() sound:Stop() end)
+            playAnimation("13499771836", 1, 5)
+            impct(80, 10, 25, 10)
+
+            spawn(function()
+                if not hrp then return end
+                for i = 1, 24 do
+                    local p = Instance.new("Part")
+                    p.Size = Vector3.new(1.5,1.5,1.5)
+                    p.Shape = Enum.PartType.Ball
+                    p.Material = Enum.Material.Neon
+                    p.Transparency = 0.1
+                    p.Anchored = true
+                    p.CanCollide = false
+                    local angle = (i/24) * math.pi * 2
+                    p.CFrame = hrp.CFrame * CFrame.new(math.cos(angle)*6, math.random(-1,3), math.sin(angle)*6)
+                    p.Parent = WorkspaceEnv
+                    local v = TweenService:Create(p, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = p.Position + Vector3.new(math.cos(angle)*12, 6, math.sin(angle)*12), Transparency = 1, Size = Vector3.new(0.1,0.1,0.1) })
+                    v:Play()
+                    Debris:AddItem(p, 1)
+                    task.wait(0.02)
+                end
+            end)
+
+            local sound = playMusic("89192934241765", 3)
+
+            local prevRunSpeed = Settings.RunSpeed
+            local prevAnimSpeed = Settings.CurrentRunAnimSpeed or Settings.DefaultRunAnimSpeed
+            if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
+                pcall(function()
+                    prevAnimSpeed = getgenv().RunAnimator.animTrack and (getgenv().RunAnimator.animTrack.Speed or prevAnimSpeed) or prevAnimSpeed
+                end)
             end
-            restoreShuck()
-        end)
-    else
-        task.delay(Settings.ShuckMaxDuration, restoreShuck)
+
+            Settings.RunSpeed = Settings.ShuckSpeed
+            getgenv().ConstantSpeed = true
+            Settings.ConstantSpeed = true
+            Settings.CurrentRunAnimSpeed = Settings.ShuckRunAnimSpeed
+            if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
+                pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
+            end
+
+            pcall(function()
+                if humanoid then humanoid.WalkSpeed = Settings.ShuckSpeed end
+            end)
+
+            local function restoreShuck()
+                Settings.RunSpeed = prevRunSpeed or 45
+                Settings.CurrentRunAnimSpeed = prevAnimSpeed or Settings.DefaultRunAnimSpeed
+                if getgenv().RunAnimator and prevAnimSpeed and getgenv().RunAnimator.animTrack then
+                    pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
+                end
+                Settings.ConstantSpeed = getgenv().ConstantSpeed
+                getgenv().ShuckLock = false
+            end
+
+            if sound then
+                local conn
+                conn = sound.Ended:Connect(function()
+                    pcall(function()
+                        if sound and sound.IsPlaying then sound:Stop() end
+                        if sound and sound.Parent then sound:Destroy() end
+                    end)
+                    pcall(function() if conn then conn:Disconnect() end end)
+                    restoreShuck()
+                end)
+
+                task.delay(Settings.ShuckMaxDuration, function()
+                    if sound and sound.IsPlaying then
+                        pcall(function() sound:Stop() end)
+                    end
+                    restoreShuck()
+                end)
+            else
+                task.delay(Settings.ShuckMaxDuration, restoreShuck)
+            end
+        end
+    }, 
+{
+    Name = "Gotta Cut",
+    Slot = "7", -- choose your hotkey slot
+    Cooldown = 5, -- cooldown in seconds
+    Func = function()
+        local char = getChar()
+        if not char then return end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+
+        -- Stop all animations
+        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+            track:Stop(0.2)
+        end
+
+        -- Play the new animation
+        playAnimation("136363608783208", 0.9, 6) -- adjust speed/duration if needed
     end
+}
+
+
+}
+-- =======================
+-- COOLDOWN MANAGEMENT
+-- =======================
+local Cooldowns = {}
+
+local function startCooldown(slot, duration)
+    Cooldowns[slot] = true
+    task.delay(duration, function()
+        Cooldowns[slot] = nil
+    end)
 end
 
--- Bind Shuck to UI slot 7 and key 7
--- Note: This block ensures hotbar binding and cooldown visuals
-do
-    pcall(function()
-        local hot7 = lp.PlayerGui.Hotbar.Backpack.Hotbar["7"]
-        local cdTemplate = lp.PlayerGui.Hotbar.Backpack.LocalScript:FindFirstChild("Cooldown")
-        if hot7 and hot7.Base and cdTemplate then
-            hot7.Visible = true
-            hot7.Base.Reuse.Visible = false
-            hot7.Base.ToolName.Text = "Shuck"
+-- =======================
+-- MOVE BINDINGS
+-- =======================
+local function bindMoves()
+    for _, move in ipairs(Moves) do
+        local slot = move.Slot
+        pcall(function()
+            local hotbarSlot = lp.PlayerGui:FindFirstChild("Hotbar") 
+                and lp.PlayerGui.Hotbar:FindFirstChild("Backpack") 
+                and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar") 
+                and lp.PlayerGui.Hotbar.Backpack.Hotbar[slot]
 
-            local function triggerShuck()
-                if not hot7.Base:FindFirstChild("Cooldown") then
-                    spawn(Shuck)
+            local cdTemplate = lp.PlayerGui:FindFirstChild("Hotbar") 
+                and lp.PlayerGui.Hotbar:FindFirstChild("Backpack") 
+                and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("LocalScript") 
+                and lp.PlayerGui.Hotbar.Backpack.LocalScript:FindFirstChild("Cooldown")
+
+            if hotbarSlot and hotbarSlot:FindFirstChild("Base") and cdTemplate then
+                hotbarSlot.Visible = true
+                if hotbarSlot.Base:FindFirstChild("Reuse") then
+                    hotbarSlot.Base.Reuse.Visible = false
+                end
+                hotbarSlot.Base.ToolName.Text = move.Name
+
+                local function triggerMove()
+                    if Cooldowns[slot] then return end
+                    spawn(move.Func)
+                    startCooldown(slot, move.Cooldown)
+
                     local deez = cdTemplate:Clone()
-                    deez.Parent = hot7.Base
-                    TweenService:Create(deez, TweenInfo.new(Settings.Cooldowns.Shuck, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), { Size = UDim2.new(1,0,0,0) }):Play()
-                    task.wait(Settings.Cooldowns.Shuck)
-                    deez:Destroy()
+                    deez.Parent = hotbarSlot.Base
+                    TweenService:Create(deez, TweenInfo.new(move.Cooldown, Enum.EasingStyle.Linear, Enum.EasingDirection.Out), { Size = UDim2.new(1,0,0,0) }):Play()
+                    task.spawn(function()
+                        task.wait(move.Cooldown)
+                        pcall(function() deez:Destroy() end)
+                    end)
+                end
+
+                hotbarSlot.Base.MouseButton1Click:Connect(triggerMove)
+            end
+        end)
+    end
+
+    -- Keyboard bindings
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if processed then return end
+        local keyToSlot = {
+            [Enum.KeyCode.One] = "1",
+            [Enum.KeyCode.Two] = "2", 
+            [Enum.KeyCode.Three] = "3",
+            [Enum.KeyCode.Four] = "4",
+            [Enum.KeyCode.Five] = "5",
+            [Enum.KeyCode.Six] = "6",
+            [Enum.KeyCode.Seven] = "7"
+        }
+        local slot = keyToSlot[input.KeyCode]
+        if slot and not Cooldowns[slot] then
+            for _, move in ipairs(Moves) do
+                if move.Slot == slot then
+                    spawn(move.Func)
+                    startCooldown(slot, move.Cooldown)
+                    break
                 end
             end
-
-            UserInputService.InputBegan:Connect(function(input, processed)
-                if processed then return end
-                if input.KeyCode == Enum.KeyCode.Seven then
-                    triggerShuck()
-                end
-            end)
-
-            hot7.Base.MouseButton1Click:Connect(triggerShuck)
         end
     end)
 end
 
--- ---------- Running animation and FOV management (robust) ----------
--- We'll store RunAnimator in getgenv() so other functions (Shuck) can access it easily
+-- =======================
+-- HOTBAR SETUP
+-- =======================
+local function setHotbarNames()
+    for _, move in ipairs(Moves) do
+        pcall(function()
+            local gui = lp.PlayerGui:FindFirstChild("Hotbar") 
+                and lp.PlayerGui.Hotbar:FindFirstChild("Backpack") 
+                and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar") 
+                and lp.PlayerGui.Hotbar.Backpack.Hotbar[move.Slot]
+
+            if gui and gui:FindFirstChild("Base") then
+                gui.Base.ToolName.Text = move.Name
+            end
+        end)
+    end
+end
+
+-- =======================
+-- RUN ANIMATION SYSTEM
+-- =======================
 getgenv().RunAnimator = getgenv().RunAnimator or { animTrack = nil, humanoid = nil, connected = nil }
 
 local function setupRunAnimationForCharacter(char)
@@ -808,7 +560,6 @@ local function setupRunAnimationForCharacter(char)
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
 
-    -- disconnect previous
     if getgenv().RunAnimator.connected then
         pcall(function() getgenv().RunAnimator.connected:Disconnect() end)
         getgenv().RunAnimator.connected = nil
@@ -819,13 +570,11 @@ local function setupRunAnimationForCharacter(char)
 
     getgenv().RunAnimator.humanoid = humanoid
 
-    -- load animation
     local anim = Instance.new("Animation")
     anim.AnimationId = "rbxassetid://" .. tostring(Settings.RunAnimId)
     local track = humanoid:LoadAnimation(anim)
     track.Priority = Enum.AnimationPriority.Action3
     getgenv().RunAnimator.animTrack = track
-    -- apply the requested speed (this value can change at runtime)
     pcall(function() track:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
 
     getgenv().RunAnimator.connected = RunService.RenderStepped:Connect(function()
@@ -835,22 +584,18 @@ local function setupRunAnimationForCharacter(char)
         local moveDir = humanoidLocal.MoveDirection
         local isMoving = (moveDir.Magnitude > 0.01)
 
-        -- Ensure anim speed matches the requested current value every tick (solves timing/play issues)
         if getgenv().RunAnimator.animTrack then
             pcall(function()
-                -- AdjustSpeed is safe to call frequently; we only call with a number
                 getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed)
             end)
         end
 
-        -- Manage walk speed
         if Settings.ConstantSpeed then
             pcall(function() humanoidLocal.WalkSpeed = Settings.RunSpeed end)
         else
             pcall(function() humanoidLocal.WalkSpeed = Settings.DefaultWalkSpeed end)
         end
 
-        -- Play/Stop animation and change FOV smoothly
         if isMoving then
             if not getgenv().RunAnimator.animTrack.IsPlaying then
                 pcall(function() getgenv().RunAnimator.animTrack:Play() end)
@@ -869,21 +614,20 @@ local function setupRunAnimationForCharacter(char)
     end)
 end
 
--- Ensure Settings.ConstantSpeed exists
-if getgenv().ConstantSpeed == nil then
-    getgenv().ConstantSpeed = true
-end
-Settings.ConstantSpeed = getgenv().ConstantSpeed
-
--- Bind character and respawn handlers
 local function bindCharacter(char)
     pcall(function()
         setupRunAnimationForCharacter(char)
         pcall(function() char:SetAttribute("UltimateName", "AW SHUCKS") end)
-        connectDeathblowHandler()
-        connectCinematicHandler()
     end)
 end
+
+-- =======================
+-- INITIALIZATION
+-- =======================
+if getgenv().ConstantSpeed == nil then
+    getgenv().ConstantSpeed = true
+end
+Settings.ConstantSpeed = getgenv().ConstantSpeed
 
 local currentChar = getChar()
 if currentChar then bindCharacter(currentChar) end
@@ -892,7 +636,12 @@ lp.CharacterAdded:Connect(function(character)
     bindCharacter(character)
 end)
 
--- ---------- Map load helper ----------
+pcall(setHotbarNames)
+bindMoves()
+
+-- =======================
+-- MAP LOAD
+-- =======================
 pcall(function()
     if getgenv().MapLoad ~= true then
         getgenv().MapLoad = true
@@ -914,29 +663,6 @@ pcall(function()
     end
 end)
 
--- ---------- Safe reconnect on respawn ----------
-pcall(function() if getgenv().pepe then getgenv().pepe:Disconnect() end end)
-getgenv().pepe = lp.CharacterAdded:Connect(function(c)
-    repeat task.wait() until c:FindFirstChild('Humanoid')
-    task.spawn(function() task.wait(1); pcall(function() if MainEnv then MainEnv() end end) end)
-    pcall(function() if SpawnA then SpawnA() end end)
-end)
-
--- ---------- Main environment bootstrap ----------
-function MainEnv()
-    for _, name in ipairs({
-        "penisthethird","gaer","gfawggawg","jum1","jum","peng","bbafaf",
-        "Bash","yeah","yeahj","ultya","musicya","boingboing","terrible","yoinkpeni"
-    }) do
-        safeDisconnectGlobal(name)
-    end
-    safeDisconnectGlobal("menarehotDEATHBLOW")
-    if not getgenv().WorkspaceEnv then ensureWorkspaceEnv() end
-    pcall(setHotbarNames)
-end
-pcall(MainEnv)
-
--- Set ultimate attribute on startup
 pcall(function()
     local char = getChar()
     if char then char:SetAttribute("UltimateName", "AW SHUCKS") end
