@@ -69,8 +69,6 @@ end
 
 -- Startup messages (kept from original)
 local blank = ("\n"):rep(7)
-sendSystemMessage(blank .. "Made by Reap!\ndiscord.gg/soulshatters", Color3.fromRGB(0,255,0))
-sendSystemMessage("\ngolden head sucks ass btw", Color3.fromRGB(255,0,0))
 
 -- Set ultimate attribute name
 pcall(function()
@@ -901,14 +899,6 @@ getgenv().pepe = lp.CharacterAdded:Connect(function(c)
     repeat task.wait() until c:FindFirstChild('Humanoid')
     task.spawn(function() task.wait(1); pcall(function() if MainEnv then MainEnv() end end) end)
     pcall(function() if SpawnA then SpawnA() end end)
-end)
-
--- ---------- Attempt to load additional assets script (kept as original) ----------
-pcall(function()
-    -- kept as-is; original referenced external LCMD.lua
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/Reapvitalized/Personal_Assets/refs/heads/main/LCMD.lua"))()
-    end)
 end)
 
 -- ---------- Main environment bootstrap (disconnect conflicting handlers) ----------
