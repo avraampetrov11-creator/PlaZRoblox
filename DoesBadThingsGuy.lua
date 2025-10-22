@@ -4,7 +4,7 @@ local Settings = {
     RunAnimId = "18897115785",
 
     -- Movement & Camera
-    RunSpeed = 40,
+    RunSpeed = 45,
     DefaultWalkSpeed = 25,
     FOV_Run = 110,
     FOV_Default = 80,
@@ -809,7 +809,7 @@ local function setupRunAnimationForCharacter(char)
     local track = humanoid:LoadAnimation(anim)
     track.Priority = Enum.AnimationPriority.Action3
     RunAnimator.animTrack = track
-    track:AdjustSpeed(0.5) -- 👈 initial speed set to 0.5
+    track:AdjustSpeed(0.6) -- 👈 initial speed set to 0.5
 
     -- We'll use RenderStepped for smooth check
     RunAnimator.connected = RunService.RenderStepped:Connect(function()
@@ -830,7 +830,7 @@ local function setupRunAnimationForCharacter(char)
         if isMoving then
             if not RunAnimator.animTrack.IsPlaying then
                 RunAnimator.animTrack:Play()
-                RunAnimator.animTrack:AdjustSpeed(0.5) -- 👈 apply speed each time it starts
+                RunAnimator.animTrack:AdjustSpeed(0.6) -- 👈 apply speed each time it starts
             end
             TweenService:Create(workspace.CurrentCamera, TweenInfo.new(Settings.FOV_TransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = Settings.FOV_Run }):Play()
         else
