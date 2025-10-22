@@ -28,7 +28,7 @@ local Settings = {
         Fault = 3,
         Modulation = 7,
         Evade = 8,
-        Shuck = 25
+        Shuck = 26
     },
 
     -- Visual / Impact settings
@@ -669,7 +669,7 @@ local function Shuck()
             local track = humanoid:LoadAnimation(Anim)
             track.Priority = Enum.AnimationPriority.Action
             track:Play()
-            task.spawn(function() task.wait(1.2); track:Stop() end)
+            task.spawn(function() task.wait(5); track:Stop() end)
         end
     end)
 
