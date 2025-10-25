@@ -279,7 +279,7 @@ local Moves = {
         highlightAndFade(3, 2)
     end
   } 
-  
+} 
 local function getChar()
     return lp and (lp.Character or lp.CharacterAdded:Wait())
 end
