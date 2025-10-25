@@ -41,245 +41,8 @@ local lp = Players.LocalPlayer
 -- =======================
 -- UTILITY FUNCTIONS
 -- =======================
-local Moves = {
-    {
-        Name = "Bleed",
-        Slot = "1",
-        Cooldown = 7,
-        Func = function() end
-    },
-    {
-        Name = "Warned",
-        Slot = "2",
-        Cooldown = 8,
-        Func = function() end
-    },
-    {
-        Name = "Heed",
-        Slot = "3",
-        Cooldown = 60,
-        Func = function()
-  
-            end
-        },
-    {
-        Name = "Fault",
-        Slot = "4",
-        Cooldown = 3,
-        Func = function() end
-    },
- 
-    {
-        Name = "Dodge",
-        Slot = "5",
-        Cooldown = 8,
-        Func = function()
-            playAnimation("18435535291", 1, 0.3)
-            playSound("7094593247", 1.5, 0.4)
+                    
 
-            task.spawn(function()
-                local Player = lp
-                local BodyParts = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
-
-                local function AfterImage(color3, material, duration, trans)
-                    for _, v in pairs(Player.Character:GetChildren()) do
-                        if table.find(BodyParts, v.Name) then
-                            local part = Instance.new("Part")
-                            part.Anchored = true
-                            part.CanCollide = false
-                            part.Massless = true
-                            part.CFrame = v.CFrame
-                            part.Size = v.Size
-                            part.Transparency = trans
-                            part.Color = color3
-                            part.Material = Enum.Material[material]
-
-                            if v.Name == "Head" then
-                                local mesh = Instance.new("SpecialMesh", part)
-                                mesh.MeshType = Enum.MeshType.Head
-                                mesh.Scale = Vector3.new(1.25,1.25,1.25)
-                            end
-                            part.Parent = WorkspaceEnv
-                            Debris:AddItem(part, duration)
-                        end
-                    end
-                end
-
-                local function createTrail(duration)
-                    local part = Instance.new("Part")
-                    part.Anchored = true
-                    part.CanCollide = false
-                    part.CanTouch = false
-                    part.CanQuery = false
-                    part.Massless = true
-                    if Player.Character and Player.Character:FindFirstChild("Torso") then
-                        part.Position = Player.Character.Torso.Position + Vector3.new(math.random(-5,5), math.random(-5,5), math.random(-5,5))
-                        part.CFrame = CFrame.lookAt(part.Position, part.Position + Player.Character.Torso.Velocity) * CFrame.new(0,0,math.random(-3,0)) * CFrame.Angles(math.rad(90), math.rad(90), 0)
-                    end
-                    part.Size = Vector3.new(0.25, 0.25, 5)
-                    part.Material = Enum.Material.Neon
-                    part.Parent = WorkspaceEnv
-                    TweenService:Create(part, TweenInfo.new(duration), { Size = Vector3.new(0.1,0.1, part.Size.Z + 1), Transparency = 1, Position = part.Position + Vector3.new(math.random(-15,15),0,0) }):Play()
-                    Debris:AddItem(part, duration)
-                    local mesh = Instance.new("SpecialMesh", part)
-                    mesh.MeshType = Enum.MeshType.Sphere
-                end
-
-                for i = 1, 20 do
-                    createTrail(1)
-                    AfterImage(Color3.fromRGB(255,255,255), "Neon", 0.6, 0.2)
-                    task.wait(0.02)
-                end
-            end)
-
-            local char2 = getChar()
-            if not char2 then return end
-            local hrp = char2:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-
-            local rnd = math.random(1,3)
-            if rnd == 1 then
-                for i = 1, 35 do
-                    if char2:FindFirstChild("Torso") then
-                        char2.Torso.DashSpin:Emit(1)
-                        char2.Torso.DashSpin1:Emit(1)
-                    end
-                    hrp.CFrame = hrp.CFrame * CFrame.new(0.8,0,0.8)
-                    task.wait(0.01)
-                end
-            elseif rnd == 2 then
-                for i = 1, 35 do
-                    if char2:FindFirstChild("Torso") then
-                        char2.Torso.DashSpin:Emit(1)
-                        char2.Torso.DashSpin1:Emit(1)
-                    end
-                    hrp.CFrame = hrp.CFrame * CFrame.new(-0.8,0,0.8)
-                    task.wait(0.01)
-                end
-            else
-                for i = 1, 35 do
-                    if char2:FindFirstChild("Torso") then
-                        char2.Torso.DashSpin:Emit(1)
-                        char2.Torso.DashSpin1:Emit(1)
-                    end
-                    hrp.CFrame = hrp.CFrame * CFrame.new(0,0,0.8)
-                    task.wait(0.01)
-                end
-            end
-        end
-    },
-    {
-        Name = "Aw Shuck",
-        Slot = "6",
-        Cooldown = 26, 
-        Func = function()
-            if getgenv().ShuckLock then return end
-            getgenv().ShuckLock = true
-
-            local char = getChar()
-            if not char then getgenv().ShuckLock = false; return end
-            local humanoid = char:FindFirstChildOfClass("Humanoid")
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-
-            pcall(function()
-                if workspace.CurrentCamera and hrp then
-                    local origCFrame = workspace.CurrentCamera.CFrame
-                    workspace.CurrentCamera.CameraType = "Scriptable"
-                    workspace.CurrentCamera.CFrame = hrp.CFrame * CFrame.new(0,5,-10) * CFrame.Angles(math.rad(-10),0,0)
-                    task.wait(0.25)
-                    workspace.CurrentCamera.CFrame = origCFrame
-                    workspace.CurrentCamera.CameraType = "Custom"
-                end
-            end)
-
-            playAnimation("13499771836", 1, 5)
-            --impct(80, 10, 25, 10)
-            highlightAndFade(2.3, 1)
-
-            local sound = playMusic("89192934241765", 3)
-            task.wait(2)
-            playAnimation("136363608783208", 0.9, 6)
-            task.wait(0.8)
-            pushForward(50,0.6)
-            task.wait(0.65) 
-            pushForward(70,0.9)
-            task.wait(0.65) 
-            pushForward(60,0.9) 
-            task.wait(0.6) 
-            pushForward(80,1)
-            task.wait(0.5) 
-            pushForward(70,0.9)
-            local prevRunSpeed = Settings.RunSpeed
-            local prevAnimSpeed = Settings.CurrentRunAnimSpeed or Settings.DefaultRunAnimSpeed
-            if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
-                pcall(function()
-                    prevAnimSpeed = getgenv().RunAnimator.animTrack and (getgenv().RunAnimator.animTrack.Speed or prevAnimSpeed) or prevAnimSpeed
-                end)
-            end
-
-            Settings.RunSpeed = Settings.ShuckSpeed
-            getgenv().ConstantSpeed = true
-            Settings.ConstantSpeed = true
-            Settings.CurrentRunAnimSpeed = Settings.ShuckRunAnimSpeed
-            if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
-                pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
-            end
-
-            pcall(function()
-                if humanoid then humanoid.WalkSpeed = Settings.ShuckSpeed end
-            end)
-
-            local function restoreShuck()
-                Settings.RunSpeed = prevRunSpeed or 45
-                Settings.CurrentRunAnimSpeed = prevAnimSpeed or Settings.DefaultRunAnimSpeed
-                if getgenv().RunAnimator and prevAnimSpeed and getgenv().RunAnimator.animTrack then
-                    pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
-                end
-                Settings.ConstantSpeed = getgenv().ConstantSpeed
-                getgenv().ShuckLock = false
-            end
-
-            if sound then
-                local conn
-                conn = sound.Ended:Connect(function()
-                    pcall(function()
-                        if sound and sound.IsPlaying then sound:Stop() end
-                        if sound and sound.Parent then sound:Destroy() end
-                    end)
-                    pcall(function() if conn then conn:Disconnect() end end)
-                    restoreShuck()
-                end)
-
-                task.delay(Settings.ShuckMaxDuration, function()
-                    if sound and sound.IsPlaying then
-                        pcall(function() sound:Stop() end)
-                    end
-                    restoreShuck()
-                end)
-            else
-                task.delay(Settings.ShuckMaxDuration, restoreShuck)
-            end
-        end
-    }, 
-{
-    Name = "Behind the Closed Doors",
-    Slot = "7", -- choose your hotkey slot
-    Cooldown = 5, -- cooldown in seconds
-    Func = function()
-        local char = getChar()
-        if not char then return end
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
-
-        -- Stop all animations
-        
-
-       
-        playAnimation("119293848229043", 0.8, 9)
-        highlightAndFade(3, 2)
-    end
-  } 
-} 
 local function getChar()
     return lp and (lp.Character or lp.CharacterAdded:Wait())
 end
@@ -523,7 +286,245 @@ end
 -- MOVES LIST
 -- =======================
 
+local Moves = {
+    {
+        Name = "Bleed",
+        Slot = "1",
+        Cooldown = 7,
+        Func = function() end
+    },
+    {
+        Name = "Warned",
+        Slot = "2",
+        Cooldown = 8,
+        Func = function() end
+    },
+    {
+        Name = "Heed",
+        Slot = "3",
+        Cooldown = 60,
+        Func = function()
+  
+            end
+        },
+    {
+        Name = "Fault",
+        Slot = "4",
+        Cooldown = 3,
+        Func = function() end
+    },
+ 
+    {
+        Name = "Dodge",
+        Slot = "5",
+        Cooldown = 8,
+        Func = function()
+            playAnimation("18435535291", 1, 0.3)
+            playSound("7094593247", 1.5, 0.4)
 
+            task.spawn(function()
+                local Player = lp
+                local BodyParts = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
+
+                local function AfterImage(color3, material, duration, trans)
+                    for _, v in pairs(Player.Character:GetChildren()) do
+                        if table.find(BodyParts, v.Name) then
+                            local part = Instance.new("Part")
+                            part.Anchored = true
+                            part.CanCollide = false
+                            part.Massless = true
+                            part.CFrame = v.CFrame
+                            part.Size = v.Size
+                            part.Transparency = trans
+                            part.Color = color3
+                            part.Material = Enum.Material[material]
+
+                            if v.Name == "Head" then
+                                local mesh = Instance.new("SpecialMesh", part)
+                                mesh.MeshType = Enum.MeshType.Head
+                                mesh.Scale = Vector3.new(1.25,1.25,1.25)
+                            end
+                            part.Parent = WorkspaceEnv
+                            Debris:AddItem(part, duration)
+                        end
+                    end
+                end
+
+                local function createTrail(duration)
+                    local part = Instance.new("Part")
+                    part.Anchored = true
+                    part.CanCollide = false
+                    part.CanTouch = false
+                    part.CanQuery = false
+                    part.Massless = true
+                    if Player.Character and Player.Character:FindFirstChild("Torso") then
+                        part.Position = Player.Character.Torso.Position + Vector3.new(math.random(-5,5), math.random(-5,5), math.random(-5,5))
+                        part.CFrame = CFrame.lookAt(part.Position, part.Position + Player.Character.Torso.Velocity) * CFrame.new(0,0,math.random(-3,0)) * CFrame.Angles(math.rad(90), math.rad(90), 0)
+                    end
+                    part.Size = Vector3.new(0.25, 0.25, 5)
+                    part.Material = Enum.Material.Neon
+                    part.Parent = WorkspaceEnv
+                    TweenService:Create(part, TweenInfo.new(duration), { Size = Vector3.new(0.1,0.1, part.Size.Z + 1), Transparency = 1, Position = part.Position + Vector3.new(math.random(-15,15),0,0) }):Play()
+                    Debris:AddItem(part, duration)
+                    local mesh = Instance.new("SpecialMesh", part)
+                    mesh.MeshType = Enum.MeshType.Sphere
+                end
+
+                for i = 1, 20 do
+                    createTrail(1)
+                    AfterImage(Color3.fromRGB(255,255,255), "Neon", 0.6, 0.2)
+                    task.wait(0.02)
+                end
+            end)
+
+            local char2 = getChar()
+            if not char2 then return end
+            local hrp = char2:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+
+            local rnd = math.random(1,3)
+            if rnd == 1 then
+                for i = 1, 35 do
+                    if char2:FindFirstChild("Torso") then
+                        char2.Torso.DashSpin:Emit(1)
+                        char2.Torso.DashSpin1:Emit(1)
+                    end
+                    hrp.CFrame = hrp.CFrame * CFrame.new(0.8,0,0.8)
+                    task.wait(0.01)
+                end
+            elseif rnd == 2 then
+                for i = 1, 35 do
+                    if char2:FindFirstChild("Torso") then
+                        char2.Torso.DashSpin:Emit(1)
+                        char2.Torso.DashSpin1:Emit(1)
+                    end
+                    hrp.CFrame = hrp.CFrame * CFrame.new(-0.8,0,0.8)
+                    task.wait(0.01)
+                end
+            else
+                for i = 1, 35 do
+                    if char2:FindFirstChild("Torso") then
+                        char2.Torso.DashSpin:Emit(1)
+                        char2.Torso.DashSpin1:Emit(1)
+                    end
+                    hrp.CFrame = hrp.CFrame * CFrame.new(0,0,0.8)
+                    task.wait(0.01)
+                end
+            end
+        end
+    },
+    {
+        Name = "Aw Shuck",
+        Slot = "6",
+        Cooldown = 26, 
+        Func = function()
+            if getgenv().ShuckLock then return end
+            getgenv().ShuckLock = true
+
+            local char = getChar()
+            if not char then getgenv().ShuckLock = false; return end
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            local hrp = char:FindFirstChild("HumanoidRootPart")
+
+            pcall(function()
+                if workspace.CurrentCamera and hrp then
+                    local origCFrame = workspace.CurrentCamera.CFrame
+                    workspace.CurrentCamera.CameraType = "Scriptable"
+                    workspace.CurrentCamera.CFrame = hrp.CFrame * CFrame.new(0,5,-10) * CFrame.Angles(math.rad(-10),0,0)
+                    task.wait(0.25)
+                    workspace.CurrentCamera.CFrame = origCFrame
+                    workspace.CurrentCamera.CameraType = "Custom"
+                end
+            end)
+
+            playAnimation("13499771836", 1, 5)
+            --impct(80, 10, 25, 10)
+            highlightAndFade(2.3, 1)
+
+            local sound = playMusic("89192934241765", 3)
+            task.wait(2)
+            playAnimation("136363608783208", 0.9, 6)
+            task.wait(0.8)
+            pushForward(50,0.6)
+            task.wait(0.65) 
+            pushForward(70,0.9)
+            task.wait(0.65) 
+            pushForward(60,0.9) 
+            task.wait(0.6) 
+            pushForward(80,1)
+            task.wait(0.5) 
+            pushForward(70,0.9)
+            local prevRunSpeed = Settings.RunSpeed
+            local prevAnimSpeed = Settings.CurrentRunAnimSpeed or Settings.DefaultRunAnimSpeed
+            if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
+                pcall(function()
+                    prevAnimSpeed = getgenv().RunAnimator.animTrack and (getgenv().RunAnimator.animTrack.Speed or prevAnimSpeed) or prevAnimSpeed
+                end)
+            end
+
+            Settings.RunSpeed = Settings.ShuckSpeed
+            getgenv().ConstantSpeed = true
+            Settings.ConstantSpeed = true
+            Settings.CurrentRunAnimSpeed = Settings.ShuckRunAnimSpeed
+            if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
+                pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
+            end
+
+            pcall(function()
+                if humanoid then humanoid.WalkSpeed = Settings.ShuckSpeed end
+            end)
+
+            local function restoreShuck()
+                Settings.RunSpeed = prevRunSpeed or 45
+                Settings.CurrentRunAnimSpeed = prevAnimSpeed or Settings.DefaultRunAnimSpeed
+                if getgenv().RunAnimator and prevAnimSpeed and getgenv().RunAnimator.animTrack then
+                    pcall(function() getgenv().RunAnimator.animTrack:AdjustSpeed(Settings.CurrentRunAnimSpeed) end)
+                end
+                Settings.ConstantSpeed = getgenv().ConstantSpeed
+                getgenv().ShuckLock = false
+            end
+
+            if sound then
+                local conn
+                conn = sound.Ended:Connect(function()
+                    pcall(function()
+                        if sound and sound.IsPlaying then sound:Stop() end
+                        if sound and sound.Parent then sound:Destroy() end
+                    end)
+                    pcall(function() if conn then conn:Disconnect() end end)
+                    restoreShuck()
+                end)
+
+                task.delay(Settings.ShuckMaxDuration, function()
+                    if sound and sound.IsPlaying then
+                        pcall(function() sound:Stop() end)
+                    end
+                    restoreShuck()
+                end)
+            else
+                task.delay(Settings.ShuckMaxDuration, restoreShuck)
+            end
+        end
+    }, 
+{
+    Name = "Behind the Closed Doors",
+    Slot = "7", -- choose your hotkey slot
+    Cooldown = 5, -- cooldown in seconds
+    Func = function()
+        local char = getChar()
+        if not char then return end
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        if not humanoid then return end
+
+        -- Stop all animations
+        
+
+       
+        playAnimation("119293848229043", 0.8, 9)
+        highlightAndFade(3, 2)
+    end
+    }
+} 
 
 -- =======================
 -- COOLDOWN MANAGEMENT
