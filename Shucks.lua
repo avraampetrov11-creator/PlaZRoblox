@@ -60,56 +60,61 @@ end
 local WorkspaceEnv = ensureWorkspaceEnv()
 
 local function highlightAndFade(delayTime, fadeTime)
-    local Players = game:GetService("Players")
-    local map = game.Workspace._Map
-    local localPlayer = Players.LocalPlayer
-    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+	local Players = game:GetService("Players")
+	local map = workspace:WaitForChild("_Map")
+	local localPlayer = Players.LocalPlayer
+	local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
 
-    -- Create workspace highlight
-    local workspaceHighlight = Instance.new("Highlight")
-    workspaceHighlight.Adornee = map
-    workspaceHighlight.FillColor = Color3.fromRGB(255, 0, 0) -- red initially
-    workspaceHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-    workspaceHighlight.FillTransparency = 0
-    workspaceHighlight.OutlineTransparency = 0
-    workspaceHighlight.Parent = map
+	-- Create workspace highlight
+	local workspaceHighlight = Instance.new("Highlight")
+	workspaceHighlight.Adornee = map
+	workspaceHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+	workspaceHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+	workspaceHighlight.FillTransparency = 0
+	workspaceHighlight.OutlineTransparency = 0
+	workspaceHighlight.Parent = map
 
-    -- Create player highlight
-    local playerHighlight = Instance.new("Highlight")
-    playerHighlight.Adornee = character
-    playerHighlight.FillColor = Color3.fromRGB(255, 255, 255) -- white initially
-    playerHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-    playerHighlight.FillTransparency = 0
-    playerHighlight.OutlineTransparency = 0
-    playerHighlight.Parent = character
+	-- Create player highlight
+	local playerHighlight = Instance.new("Highlight")
+	playerHighlight.Adornee = character
+	playerHighlight.FillColor = Color3.fromRGB(255, 255, 255)
+	playerHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+	playerHighlight.FillTransparency = 0
+	playerHighlight.OutlineTransparency = 0
+	playerHighlight.Parent = character
 
-    -- Wait for delay
-    task.wait(delayTime)
+	-- Run the fade asynchronously so the script doesn’t freeze
+	task.spawn(function()
+		-- Wait for delay
+		task.wait(delayTime)
 
-    -- Swap colors
-    workspaceHighlight.FillColor = Color3.fromRGB(255, 255, 255) -- workspace white
-    workspaceHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		-- Swap colors
+		workspaceHighlight.FillColor = Color3.fromRGB(255, 255, 255)
+		workspaceHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 
-    playerHighlight.FillColor = Color3.fromRGB(0, 0, 0) -- player black
-    playerHighlight.OutlineColor = Color3.fromRGB(0, 0, 0)
+		playerHighlight.FillColor = Color3.fromRGB(0, 0, 0)
+		playerHighlight.OutlineColor = Color3.fromRGB(0, 0, 0)
 
-    -- Fade highlights
-    local startTime = tick()
-    while tick() - startTime < fadeTime do
-        local alpha = (tick() - startTime) / fadeTime
-        workspaceHighlight.FillTransparency = math.clamp(alpha, 0, 1)
-        workspaceHighlight.OutlineTransparency = math.clamp(alpha, 0, 1)
+		-- Fade highlights over time
+		local startTime = tick()
+		while tick() - startTime < fadeTime do
+			local alpha = (tick() - startTime) / fadeTime
+			alpha = math.clamp(alpha, 0, 1)
 
-        playerHighlight.FillTransparency = math.clamp(alpha, 0, 1)
-        playerHighlight.OutlineTransparency = math.clamp(alpha, 0, 1)
+			workspaceHighlight.FillTransparency = alpha
+			workspaceHighlight.OutlineTransparency = alpha
+			playerHighlight.FillTransparency = alpha
+			playerHighlight.OutlineTransparency = alpha
 
-        task.wait()
-    end
+			task.wait()
+		end
 
-    -- Ensure fully transparent
-    workspaceHighlight:Destroy()
-    playerHighlight:Destroy()
+		-- Cleanup
+		workspaceHighlight:Destroy()
+		playerHighlight:Destroy()
+	end)
 end
+
 
 -- Example usage:
 -- highlightAndFade(3, 2)
@@ -517,11 +522,22 @@ local Moves = {
         if not humanoid then return end
 
         -- Stop all animations
-        
-
+        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+            track:Stop()
+        end
+ 
        
         playAnimation("119293848229043", 0.8, 9)
-        highlightAndFade(3, 2)
+        task.wait(2.4)
+        playAnimation("128934660661875", 0.8, 9)
+        highlightAndFade(0.69, 1)
+        task.wait(0.69)
+        pushForward(150,0.5)
+        task.wait(0) 
+
+workspace.Live.AvraamPetroman.Communicate:FireServer({["Mobile"] = true,["Goal"] = "LeftClick"})
+       task.wait(1)
+        workspace.Live.AvraamPetroman.Communicate:FireServer({["Goal"] =    "LeftClickRelease",["Mobile"] = true})
     end
     }
 } 
@@ -737,9 +753,10 @@ pcall(function()
     end
 end)
 
+
 pcall(function()
     local char = getChar()
     if char then char:SetAttribute("UltimateName", "AW SHUCKS") end
 end)
 
-
+  
