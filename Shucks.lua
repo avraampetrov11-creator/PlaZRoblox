@@ -1,9 +1,13 @@
+-- AW SHUCKS
+
 -- =======================
 -- SETTINGS
 -- =======================
 local Settings = {
     -- Animation IDs
     RunAnimId = "18897115785",
+    IdleBaseAnimId = "14516273501",
+    IdleAnimId = "17465544429",
 
     -- Movement & Camera
     RunSpeed = 38,
@@ -25,6 +29,7 @@ local Settings = {
     ImpactPartsCount = 55,
     WorkspaceEnvName = "Thrown_WORKSPACE_ENV",
 }
+
 -- =======================
 -- SERVICES
 -- =======================
@@ -41,8 +46,6 @@ local lp = Players.LocalPlayer
 -- =======================
 -- UTILITY FUNCTIONS
 -- =======================
-                    
-
 local function getChar()
     return lp and (lp.Character or lp.CharacterAdded:Wait())
 end
@@ -60,65 +63,48 @@ end
 local WorkspaceEnv = ensureWorkspaceEnv()
 
 local function highlightAndFade(delayTime, fadeTime)
-	local Players = game:GetService("Players")
-	local map = workspace:WaitForChild("_Map")
-	local localPlayer = Players.LocalPlayer
-	local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+    local map = workspace:WaitForChild("_Map")
+    local localPlayer = Players.LocalPlayer
+    local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
 
-	-- Create workspace highlight
-	local workspaceHighlight = Instance.new("Highlight")
-	workspaceHighlight.Adornee = map
-	workspaceHighlight.FillColor = Color3.fromRGB(255, 0, 0)
-	workspaceHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
-	workspaceHighlight.FillTransparency = 0
-	workspaceHighlight.OutlineTransparency = 0
-	workspaceHighlight.Parent = map
+    local workspaceHighlight = Instance.new("Highlight")
+    workspaceHighlight.Adornee = map
+    workspaceHighlight.FillColor = Color3.fromRGB(255, 0, 0)
+    workspaceHighlight.OutlineColor = Color3.fromRGB(255, 0, 0)
+    workspaceHighlight.FillTransparency = 0
+    workspaceHighlight.OutlineTransparency = 0
+    workspaceHighlight.Parent = map
 
-	-- Create player highlight
-	local playerHighlight = Instance.new("Highlight")
-	playerHighlight.Adornee = character
-	playerHighlight.FillColor = Color3.fromRGB(255, 255, 255)
-	playerHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-	playerHighlight.FillTransparency = 0
-	playerHighlight.OutlineTransparency = 0
-	playerHighlight.Parent = character
+    local playerHighlight = Instance.new("Highlight")
+    playerHighlight.Adornee = character
+    playerHighlight.FillColor = Color3.fromRGB(255, 255, 255)
+    playerHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    playerHighlight.FillTransparency = 0
+    playerHighlight.OutlineTransparency = 0
+    playerHighlight.Parent = character
 
-	-- Run the fade asynchronously so the script doesn’t freeze
-	task.spawn(function()
-		-- Wait for delay
-		task.wait(delayTime)
+    task.spawn(function()
+        task.wait(delayTime)
+        workspaceHighlight.FillColor = Color3.fromRGB(255, 255, 255)
+        workspaceHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+        playerHighlight.FillColor = Color3.fromRGB(0, 0, 0)
+        playerHighlight.OutlineColor = Color3.fromRGB(0, 0, 0)
 
-		-- Swap colors
-		workspaceHighlight.FillColor = Color3.fromRGB(255, 255, 255)
-		workspaceHighlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-
-		playerHighlight.FillColor = Color3.fromRGB(0, 0, 0)
-		playerHighlight.OutlineColor = Color3.fromRGB(0, 0, 0)
-
-		-- Fade highlights over time
-		local startTime = tick()
-		while tick() - startTime < fadeTime do
-			local alpha = (tick() - startTime) / fadeTime
-			alpha = math.clamp(alpha, 0, 1)
-
-			workspaceHighlight.FillTransparency = alpha
-			workspaceHighlight.OutlineTransparency = alpha
-			playerHighlight.FillTransparency = alpha
-			playerHighlight.OutlineTransparency = alpha
-
-			task.wait()
-		end
-
-		-- Cleanup
-		workspaceHighlight:Destroy()
-		playerHighlight:Destroy()
-	end)
+        local startTime = tick()
+        while tick() - startTime < fadeTime do
+            local alpha = math.clamp((tick() - startTime) / fadeTime, 0, 1)
+            workspaceHighlight.FillTransparency = alpha
+            workspaceHighlight.OutlineTransparency = alpha
+            playerHighlight.FillTransparency = alpha
+            playerHighlight.OutlineTransparency = alpha
+            task.wait()
+        end
+        pcall(function()
+            workspaceHighlight:Destroy()
+            playerHighlight:Destroy()
+        end)
+    end)
 end
-
-
--- Example usage:
--- highlightAndFade(3, 2)
--- Wait 3 seconds, swap colors, then fade highlights over 2 seconds
 
 local function pushForward(forcePower, duration)
     local char = getChar()
@@ -126,22 +112,21 @@ local function pushForward(forcePower, duration)
     local hrp = char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
-    -- Create BodyVelocity
     local bodyVelocity = Instance.new("BodyVelocity")
-    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5) -- include Y for smoother movement
+    bodyVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
     bodyVelocity.Velocity = hrp.CFrame.LookVector * forcePower
     bodyVelocity.Parent = hrp
 
     local startTime = tick()
-
     task.spawn(function()
         while tick() - startTime < duration do
-            local elapsed = tick() - startTime
-            local alpha = 1 - (elapsed / duration)
-            bodyVelocity.Velocity = hrp.CFrame.LookVector * forcePower * alpha
+            local alpha = 1 - ((tick() - startTime) / duration)
+            if hrp then
+                bodyVelocity.Velocity = hrp.CFrame.LookVector * forcePower * alpha
+            end
             task.wait()
         end
-        bodyVelocity:Destroy()
+        pcall(function() bodyVelocity:Destroy() end)
     end)
 end
 
@@ -153,7 +138,6 @@ function playAnimation(animId, speed, duration)
     if not char then return end
     local humanoid = char:FindFirstChildOfClass("Humanoid")
     if not humanoid then return end
-
     pcall(function()
         local Anim = Instance.new("Animation")
         Anim.AnimationId = "rbxassetid://" .. animId
@@ -161,11 +145,10 @@ function playAnimation(animId, speed, duration)
         track.Priority = Enum.AnimationPriority.Action4
         track:AdjustSpeed(speed or 1)
         track:Play()
-
         if duration then
             task.spawn(function()
                 task.wait(duration)
-                track:Stop(0.4)
+                pcall(function() track:Stop(0.4) end)
             end)
         end
     end)
@@ -188,7 +171,7 @@ function playSound(soundId, volume, fadeDuration)
                 s.Volume = 0.5
                 task.wait(fadeDuration)
                 s.Volume = 0.2
-                s:Destroy()
+                pcall(function() s:Destroy() end)
             end)
         end
     end)
@@ -231,7 +214,6 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
                 end
             end
         end)
-
         spawn(function()
             for i = 1, amount do
                 task.spawn(function()
@@ -239,11 +221,9 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
                     if not char then return end
                     local root = char:FindFirstChild("HumanoidRootPart")
                     if not root then return end
-
                     local p = Instance.new("Part")
                     p.Shape = Enum.PartType.Cylinder
                     p.Size = Vector3.new(math.random(1,77), math.random(55,99)/255, math.random(55,99)/255)
-                    p.Name = "IMPACT"
                     p.Material = Enum.Material.Neon
                     p.Anchored = true
                     p.CanCollide = false
@@ -251,7 +231,6 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
                     local mesh = Instance.new("SpecialMesh", p)
                     mesh.MeshType = Enum.MeshType.Sphere
                     p.Parent = WorkspaceEnv
-
                     local tw = TweenService:Create(p, TweenInfo.new(0.05), { CFrame = p.CFrame * CFrame.new(math.random(5,35), 0, 0) })
                     tw:Play()
                     tw.Completed:Wait()
@@ -260,9 +239,7 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
                 task.wait(0.01)
             end
         end)
-
         task.wait(0.4)
-
         for i = 1, pulseRepeats do
             if workspace._Map and workspace._Map:FindFirstChild("Highlight") then
                 workspace._Map.Highlight.FillColor = Color3.new(1,1,1)
@@ -273,14 +250,10 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
                 task.wait(0.01)
             end
         end
-
         for i = 1, fadeRepeats do
             if workspace._Map and workspace._Map:FindFirstChild("Highlight") then
-                workspace._Map.Highlight.FillTransparency = 0 + i/35
-                workspace._Map.Highlight.OutlineTransparency = 0 + i/35
-                task.wait(0.01)
-                workspace._Map.Highlight.FillTransparency = 1
-                workspace._Map.Highlight.OutlineTransparency = 1
+                workspace._Map.Highlight.FillTransparency = i/35
+                workspace._Map.Highlight.OutlineTransparency = i/35
                 task.wait(0.01)
             end
         end
@@ -288,9 +261,33 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
 end
 
 -- =======================
+-- IDLE ANIMATION HANDLER
+-- =======================
+local function setupIdleAnimation(char)
+    if not char then return end
+    local humanoid = char:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    pcall(function()
+        if getgenv().IdleConnection then
+            getgenv().IdleConnection:Disconnect()
+        end
+        getgenv().IdleConnection = humanoid.AnimationPlayed:Connect(function(track)
+            if track and track.Animation and track.Animation.AnimationId == "rbxassetid://" .. Settings.IdleBaseAnimId then
+                local Anim = Instance.new("Animation")
+                Anim.AnimationId = "rbxassetid://" .. Settings.IdleAnimId
+                local idleTrack = humanoid:LoadAnimation(Anim)
+                idleTrack.Priority = Enum.AnimationPriority.Idle
+                idleTrack:Play(0.3)
+                track.Stopped:Wait()
+                idleTrack:Stop(0.3)
+            end
+        end)
+    end)
+end
+
+-- =======================
 -- MOVES LIST
 -- =======================
-
 local Moves = {
     {
         Name = "Bleed",
@@ -309,16 +306,15 @@ local Moves = {
         Slot = "3",
         Cooldown = 60,
         Func = function()
-  
-            end
-        },
+            -- placeholder Heed functionality
+        end
+    },
     {
         Name = "Fault",
         Slot = "4",
         Cooldown = 3,
         Func = function() end
     },
- 
     {
         Name = "Dodge",
         Slot = "5",
@@ -332,6 +328,7 @@ local Moves = {
                 local BodyParts = { "Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" }
 
                 local function AfterImage(color3, material, duration, trans)
+                    if not Player.Character then return end
                     for _, v in pairs(Player.Character:GetChildren()) do
                         if table.find(BodyParts, v.Name) then
                             local part = Instance.new("Part")
@@ -391,8 +388,8 @@ local Moves = {
             if rnd == 1 then
                 for i = 1, 35 do
                     if char2:FindFirstChild("Torso") then
-                        char2.Torso.DashSpin:Emit(1)
-                        char2.Torso.DashSpin1:Emit(1)
+                        if char2.Torso:FindFirstChild("DashSpin") then char2.Torso.DashSpin:Emit(1) end
+                        if char2.Torso:FindFirstChild("DashSpin1") then char2.Torso.DashSpin1:Emit(1) end
                     end
                     hrp.CFrame = hrp.CFrame * CFrame.new(0.8,0,0.8)
                     task.wait(0.01)
@@ -400,8 +397,8 @@ local Moves = {
             elseif rnd == 2 then
                 for i = 1, 35 do
                     if char2:FindFirstChild("Torso") then
-                        char2.Torso.DashSpin:Emit(1)
-                        char2.Torso.DashSpin1:Emit(1)
+                        if char2.Torso:FindFirstChild("DashSpin") then char2.Torso.DashSpin:Emit(1) end
+                        if char2.Torso:FindFirstChild("DashSpin1") then char2.Torso.DashSpin1:Emit(1) end
                     end
                     hrp.CFrame = hrp.CFrame * CFrame.new(-0.8,0,0.8)
                     task.wait(0.01)
@@ -409,8 +406,8 @@ local Moves = {
             else
                 for i = 1, 35 do
                     if char2:FindFirstChild("Torso") then
-                        char2.Torso.DashSpin:Emit(1)
-                        char2.Torso.DashSpin1:Emit(1)
+                        if char2.Torso:FindFirstChild("DashSpin") then char2.Torso.DashSpin:Emit(1) end
+                        if char2.Torso:FindFirstChild("DashSpin1") then char2.Torso.DashSpin1:Emit(1) end
                     end
                     hrp.CFrame = hrp.CFrame * CFrame.new(0,0,0.8)
                     task.wait(0.01)
@@ -421,7 +418,7 @@ local Moves = {
     {
         Name = "Aw Shuck",
         Slot = "6",
-        Cooldown = 26, 
+        Cooldown = 26,
         Func = function()
             if getgenv().ShuckLock then return end
             getgenv().ShuckLock = true
@@ -443,7 +440,6 @@ local Moves = {
             end)
 
             playAnimation("13499771836", 1, 5)
-            --impct(80, 10, 25, 10)
             highlightAndFade(2.3, 1)
 
             local sound = playMusic("89192934241765", 3)
@@ -451,14 +447,15 @@ local Moves = {
             playAnimation("136363608783208", 0.9, 6)
             task.wait(0.8)
             pushForward(50,0.6)
-            task.wait(0.65) 
+            task.wait(0.65)
             pushForward(70,0.9)
-            task.wait(0.65) 
-            pushForward(60,0.9) 
-            task.wait(0.6) 
+            task.wait(0.65)
+            pushForward(60,0.9)
+            task.wait(0.6)
             pushForward(80,1)
-            task.wait(0.5) 
+            task.wait(0.5)
             pushForward(70,0.9)
+
             local prevRunSpeed = Settings.RunSpeed
             local prevAnimSpeed = Settings.CurrentRunAnimSpeed or Settings.DefaultRunAnimSpeed
             if getgenv().RunAnimator and getgenv().RunAnimator.animTrack then
@@ -510,37 +507,43 @@ local Moves = {
                 task.delay(Settings.ShuckMaxDuration, restoreShuck)
             end
         end
-    }, 
-{
-    Name = "Behind the Closed Doors",
-    Slot = "7", -- choose your hotkey slot
-    Cooldown = 5, -- cooldown in seconds
-    Func = function()
-        local char = getChar()
-        if not char then return end
-        local humanoid = char:FindFirstChildOfClass("Humanoid")
-        if not humanoid then return end
+    },
+    {
+        Name = "Behind the Closed Doors",
+        Slot = "7",
+        Cooldown = 5,
+        Func = function()
+            local char = getChar()
+            if not char then return end
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
 
-        -- Stop all animations
-        for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
-            track:Stop()
+            -- Stop all animations
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+
+            playAnimation("119293848229043", 0.8, 9)
+            task.wait(2.4)
+            playAnimation("128934660661875", 0.8, 9)
+            highlightAndFade(0.69, 1)
+            task.wait(0.69)
+            pushForward(150,0.5)
+            task.wait(0)
+
+            -- Example server call (custom to your game)
+            if workspace.Live and workspace.Live:FindFirstChild("AvraamPetroman") and workspace.Live.AvraamPetroman:FindFirstChild("Communicate") then
+                pcall(function()
+                    workspace.Live.AvraamPetroman.Communicate:FireServer({["Mobile"] = true,["Goal"] = "LeftClick"})
+                end)
+                task.wait(1)
+                pcall(function()
+                    workspace.Live.AvraamPetroman.Communicate:FireServer({["Goal"] = "LeftClickRelease",["Mobile"] = true})
+                end)
+            end
         end
- 
-       
-        playAnimation("119293848229043", 0.8, 9)
-        task.wait(2.4)
-        playAnimation("128934660661875", 0.8, 9)
-        highlightAndFade(0.69, 1)
-        task.wait(0.69)
-        pushForward(150,0.5)
-        task.wait(0) 
-
-workspace.Live.AvraamPetroman.Communicate:FireServer({["Mobile"] = true,["Goal"] = "LeftClick"})
-       task.wait(1)
-        workspace.Live.AvraamPetroman.Communicate:FireServer({["Goal"] =    "LeftClickRelease",["Mobile"] = true})
-    end
     }
-} 
+}
 
 -- =======================
 -- COOLDOWN MANAGEMENT
@@ -622,15 +625,16 @@ local function bindMoves()
     end)
 end
 
+
 -- =======================
 -- HOTBAR SETUP
 -- =======================
 local function setHotbarNames()
     for _, move in ipairs(Moves) do
         pcall(function()
-            local gui = lp.PlayerGui:FindFirstChild("Hotbar") 
-                and lp.PlayerGui.Hotbar:FindFirstChild("Backpack") 
-                and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar") 
+            local gui = lp.PlayerGui:FindFirstChild("Hotbar")
+                and lp.PlayerGui.Hotbar:FindFirstChild("Backpack")
+                and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar")
                 and lp.PlayerGui.Hotbar.Backpack.Hotbar[move.Slot]
 
             if gui and gui:FindFirstChild("Base") then
@@ -707,6 +711,7 @@ end
 local function bindCharacter(char)
     pcall(function()
         setupRunAnimationForCharacter(char)
+        setupIdleAnimation(char) -- Added idle animation hook
         pcall(function() char:SetAttribute("UltimateName", "AW SHUCKS") end)
     end)
 end
@@ -753,10 +758,8 @@ pcall(function()
     end
 end)
 
-
 pcall(function()
     local char = getChar()
     if char then char:SetAttribute("UltimateName", "AW SHUCKS") end
 end)
 
-  
