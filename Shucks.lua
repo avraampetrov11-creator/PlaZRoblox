@@ -40,6 +40,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Debris = game:GetService("Debris")
 local SoundService = game:GetService("SoundService")
+local StarterGui = game:GetService("StarterGui") 
 
 local lp = Players.LocalPlayer
 
@@ -670,7 +671,7 @@ end
 -- =======================
 -- HOTBAR SETUP
 -- =======================
-local StarterGui = game:GetService("StarterGui")
+
 
 
 local function setHotbarNames()
