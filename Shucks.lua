@@ -23,7 +23,7 @@ local Settings = {
     -- Shuck-specific
     ShuckSpeed = 65,
     ShuckRunAnimSpeed = 0.8,
-    ShuckMaxDuration = 25,
+    ShuckMaxDuration = 26,
 
     -- Visual / Impact settings
     ImpactPartsCount = 55,
@@ -178,12 +178,13 @@ function playSound(soundId, volume, fadeDuration)
     end)
 end
 
-function playMusic(soundId, volume)
+function playMusic(soundId, volume, playbackSpeed, startPosition)
     local sound = Instance.new("Sound")
     sound.Name = "ShuckMusic"
     sound.SoundId = "rbxassetid://" .. soundId
     sound.Volume = volume or 3
-    sound.PlaybackSpeed = 1
+    sound.PlaybackSpeed = playbackSpeed
+    sound.TimePosition = startPosition
     sound.Looped = false
     sound.Parent = SoundService
     sound:Play()
@@ -424,7 +425,7 @@ local Moves = {
     {
         Name = "AW SHUCK",
         Slot = "8",
-        Cooldown = 26,
+        Cooldown = 34,
         Ultimate = true, 
         Func = function()
             if getgenv().ShuckLock then return end
@@ -449,7 +450,7 @@ local Moves = {
             playAnimation("13499771836", 1, 5)
             highlightAndFade(2.3, 1)
 
-            local sound = playMusic("89192934241765", 3)
+            local sound = playMusic("89192934241765", 3, 0.95, 3.3)
             task.wait(2)
             playAnimation("136363608783208", 0.9, 6)
             task.wait(0.8)
