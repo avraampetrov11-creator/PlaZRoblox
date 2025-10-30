@@ -290,35 +290,40 @@ end
 -- =======================
 local Moves = {
     {
-        Name = "Bleed",
+        Name = "BLEED",
         Slot = "1",
-        Cooldown = 7,
+        Cooldown = 7, 
+        Ultimate = false, 
         Func = function() end
     },
     {
-        Name = "Warned",
+        Name = "WARNED",
         Slot = "2",
         Cooldown = 8,
+        Ultimate = false, 
         Func = function() end
     },
     {
-        Name = "Heed",
+        Name = "HEED",
         Slot = "3",
         Cooldown = 60,
+        Ultimate = false, 
         Func = function()
             -- placeholder Heed functionality
         end
     },
     {
-        Name = "Fault",
+        Name = "FAULT",
         Slot = "4",
         Cooldown = 3,
+        Ultimate = false, 
         Func = function() end
     },
     {
-        Name = "Dodge",
+        Name = "DODGE",
         Slot = "5",
-        Cooldown = 8,
+        Cooldown = 8, 
+        Ultimate = false, 
         Func = function()
             playAnimation("18435535291", 1, 0.3)
             playSound("7094593247", 1.5, 0.4)
@@ -416,9 +421,10 @@ local Moves = {
         end
     },
     {
-        Name = "Aw Shuck",
-        Slot = "6",
+        Name = "AW SHUCK",
+        Slot = "8",
         Cooldown = 26,
+        Ultimate = true, 
         Func = function()
             if getgenv().ShuckLock then return end
             getgenv().ShuckLock = true
@@ -509,9 +515,10 @@ local Moves = {
         end
     },
     {
-        Name = "Behind the Closed Doors",
-        Slot = "7",
+        Name = "RETOLD",
+        Slot = "6",
         Cooldown = 5,
+        Ultimate = false, 
         Func = function()
             local char = getChar()
             if not char then return end
@@ -542,7 +549,41 @@ local Moves = {
                 end)
             end
         end
-    }
+    }, 
+{
+        Name = "IRIDA",
+        Slot = "7",
+        Cooldown = 1,
+        Ultimate = false,
+        Func = function()
+            local char = getChar()
+            if not char then return end
+            local humanoid = char:FindFirstChildOfClass("Humanoid")
+            if not humanoid then return end
+
+            -- Stop all animations
+            for _, track in pairs(humanoid:GetPlayingAnimationTracks()) do
+                track:Stop()
+            end
+
+            playAnimation("137561511768861", 0.8, 9) 
+            --highlightAndFade(0.69, 1)
+            task.wait(0.69)
+            pushForward(200,0.4)
+            task.wait(0)
+
+            -- Example server call (custom to your game)
+            if workspace.Live and workspace.Live:FindFirstChild("AvraamPetroman") and workspace.Live.AvraamPetroman:FindFirstChild("Communicate") then
+                pcall(function()
+                    workspace.Live.AvraamPetroman.Communicate:FireServer({["Mobile"] = true,["Goal"] = "LeftClick"})
+                end)
+                task.wait(0.6)
+                pcall(function()
+                    workspace.Live.AvraamPetroman.Communicate:FireServer({["Goal"] = "LeftClickRelease",["Mobile"] = true})
+                end)
+            end
+        end
+     } 
 }
 
 -- =======================
@@ -629,19 +670,44 @@ end
 -- =======================
 -- HOTBAR SETUP
 -- =======================
-local function setHotbarNames()
-    for _, move in ipairs(Moves) do
-        pcall(function()
-            local gui = lp.PlayerGui:FindFirstChild("Hotbar")
-                and lp.PlayerGui.Hotbar:FindFirstChild("Backpack")
-                and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar")
-                and lp.PlayerGui.Hotbar.Backpack.Hotbar[move.Slot]
+local StarterGui = game:GetService("StarterGui")
 
-            if gui and gui:FindFirstChild("Base") then
-                gui.Base.ToolName.Text = move.Name
-            end
-        end)
-    end
+
+local function setHotbarNames()
+	for _, move in ipairs(Moves) do
+		pcall(function()
+			-- Locate the player's hotbar slot
+			local hotbar = lp.PlayerGui:FindFirstChild("Hotbar")
+				and lp.PlayerGui.Hotbar:FindFirstChild("Backpack")
+				and lp.PlayerGui.Hotbar.Backpack:FindFirstChild("Hotbar")
+
+			if not hotbar then return end
+
+			local slotGui = hotbar:FindFirstChild(tostring(move.Slot))
+			if not slotGui or not slotGui:FindFirstChild("Base") then return end
+
+			local base = slotGui.Base
+
+			-- Set move name
+			if base:FindFirstChild("ToolName") then
+				base.ToolName.Text = move.Name
+			end
+
+			-- If Ultimate = true, clone Flipbook into this Base
+			if move.Ultimate == true then
+				local flipbookSource = StarterGui:FindFirstChild("Hotbar")
+					and StarterGui.Hotbar:FindFirstChild("Backpack")
+					and StarterGui.Hotbar.Backpack:FindFirstChild("LocalScript")
+					and StarterGui.Hotbar.Backpack.LocalScript:FindFirstChild("Flipbook")
+
+				if flipbookSource and not base:FindFirstChild("Flipbook") then
+					local clone = flipbookSource:Clone()
+					clone.Parent = base
+                                        clone.LocalScript.Enabled = true
+				end
+			end
+		end)
+	end
 end
 
 -- =======================
@@ -763,3 +829,4 @@ pcall(function()
     if char then char:SetAttribute("UltimateName", "AW SHUCKS") end
 end)
 
+-- End of file
