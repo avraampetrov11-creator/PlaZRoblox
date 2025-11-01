@@ -7,7 +7,8 @@ local Settings = {
     -- Animation IDs
     RunAnimId = "18897115785",
     IdleBaseAnimId = "14516273501",
-    IdleAnimId = "17465544429",
+    OLDIdleAnimId = "17465544429",
+    IdleAnimId = "18459183268", 
 
     -- Movement & Camera
     RunSpeed = 38,
@@ -423,7 +424,7 @@ local Moves = {
         end
     },
     {
-        Name = "AW SHUCK",
+        Name = "S H U C K S",
         Slot = "8",
         Cooldown = 34,
         Ultimate = true, 
@@ -517,7 +518,7 @@ local Moves = {
         end
     },
     {
-        Name = "RETOLD",
+        Name = "MISTAKE",
         Slot = "6",
         Cooldown = 5,
         Ultimate = false, 
@@ -553,7 +554,7 @@ local Moves = {
         end
     }, 
 {
-        Name = "IRIDA",
+        Name = "SAWDUST",
         Slot = "7",
         Cooldown = 1,
         Ultimate = false,
@@ -828,7 +829,7 @@ end)
 
 pcall(function()
     local char = getChar()
-    if char then char:SetAttribute("UltimateName", "AW SHUCKS") end
+    if char then char:SetAttribute("UltimateName", "REVENGE") end
 end)
 
 -- End of file
