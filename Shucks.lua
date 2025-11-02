@@ -832,7 +832,15 @@ pcall(function()
     if char then char:SetAttribute("UltimateName", "REVENGE") end
 end)
 
+lp.CharacterAdded:Connect(function(character)
+	task.wait(1)
+
+	local success, err = pcall(setHotbarNames)
+	if not success then
+		warn("Error setting hotbar names:", err)
+	end
+	bindMoves()   loadstring(game:HttpGet("https://raw.githubusercontent.com/avraampetrov11-creator/PlaZRoblox/main/ShucksM1.lua"))()
+end)
+
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/avraampetrov11-creator/PlaZRoblox/main/ShucksM1.lua"))()
-
--- End of file
