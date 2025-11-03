@@ -193,7 +193,7 @@ local function releaseCharge()
 				if distance < HIT_DISTANCE and not dashHitPlayers[otherPlayer] then
 					dashHitPlayers[otherPlayer] = true
 					RS.Events.Core_Replication:FireServer("Change_Att", otherPlayer.Character.Character_Settings, "Ragdoll", true)
-					task.delay(3, function()
+					task.delay(9, function()
 						if otherPlayer.Character and otherPlayer.Character:FindFirstChild("Character_Settings") then
 							RS.Events.Core_Replication:FireServer("Change_Att", otherPlayer.Character.Character_Settings, "Ragdoll", false)
 						end
