@@ -1,5 +1,30 @@
+-- =======================
+-- AUDIO LOADER INTEGRATION
+-- =======================
+local audioUrl = "https://raw.githubusercontent.com/avraampetrov11-creator/PlaZRoblox/main/ShucksAudio.mp3"
+local audioName = "ShucksAudio"
+local audioFileName = audioName .. ".mp3"
 
--- AW SHUCKS (UPDATED WITH IDLE/WALK/RUN SYSTEM)
+local function DownloadAudio()
+    local success, response = pcall(function()
+        local fileContent = game:HttpGet(audioUrl)
+        writefile(audioFileName, fileContent)
+        print("Audio downloaded successfully: " .. audioFileName)
+    end)
+    if not success then
+        warn("Failed to download audio: " .. tostring(response))
+    end
+end
+
+if not isfile(audioFileName) then
+    DownloadAudio()
+else
+    print("Audio file already exists: " .. audioFileName)
+end
+
+-- =======================
+-- AW SHUCKS SCRIPT START
+-- =======================
 
 -- =======================
 -- SETTINGS
@@ -7,13 +32,13 @@
 local Settings = {
     -- Run Animation (Existing)
     RunAnimId = "18897115785",
-    
+
     -- New Random Idle Animations
     IdleAnimsList = {
         "137841251329955",
         "112138009997034"
     },
-    
+
     -- New Random Walk Animations
     WalkAnimsList = {
         "89642715363301",
@@ -280,11 +305,10 @@ local function impct(amount, flashRepeats, fadeRepeats, pulseRepeats)
 end
 
 -- =======================
--- IDLE ANIMATION HANDLER (DEPRECATED FOR NEW SYSTEM, BUT KEPT EMPTY TO PREVENT ERROR)
+-- IDLE ANIMATION HANDLER
 -- =======================
 local function setupIdleAnimation(char)
     -- This is now handled in the main RenderStepped loop for smoother transitions
-    -- Keeping function definition to avoid breaking calls
 end
 
 -- =======================
@@ -450,7 +474,18 @@ local Moves = {
             playAnimation("13499771836", 1, 5)
             highlightAndFade(2.3, 1)
 
-            local sound = playMusic("89192934241765", 3, 0.95, 3.3)
+            -- MODIFIED: Playing the Custom Audio using getcustomasset
+            local sound = Instance.new("Sound")
+            sound.Name = "CustomShucksAudio"
+            -- Try to use the file downloaded at start
+            local assetId = getcustomasset(audioFileName) 
+            sound.SoundId = assetId
+            sound.Volume = 3
+            sound.PlaybackSpeed = 1 
+            sound.Looped = false
+            sound.Parent = SoundService
+            sound:Play()
+
             task.wait(2)
             playAnimation("136363608783208", 0.9, 6)
             task.wait(0.8)
@@ -509,6 +544,8 @@ local Moves = {
                     if sound and sound.IsPlaying then
                         pcall(function() sound:Stop() end)
                     end
+                    -- Cleanup if not ended yet
+                    pcall(function() sound:Destroy() end)
                     restoreShuck()
                 end)
             else
@@ -756,7 +793,7 @@ local function setupMovementSystem(char)
         local character = getChar()
         if not character or not character:FindFirstChild("HumanoidRootPart") then return end
         local hum = character:FindFirstChildOfClass("Humanoid")
-        
+
         -- Calculate actual movement speed (ignoring vertical Y movement)
         local velocity = character.HumanoidRootPart.AssemblyLinearVelocity
         local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
@@ -781,12 +818,12 @@ local function setupMovementSystem(char)
         -- State Machine Transition
         if newState ~= getgenv().MovementHandler.currentState then
             getgenv().MovementHandler.currentState = newState
-            
+
             if newState == "Idle" then
                 -- Play Random Idle
                 local rnd = Settings.IdleAnimsList[math.random(1, #Settings.IdleAnimsList)]
                 playAnim(rnd, 1, Enum.AnimationPriority.Idle)
-                
+
                 -- Reset FOV
                 pcall(function()
                     TweenService:Create(workspace.CurrentCamera, TweenInfo.new(Settings.FOV_TransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = Settings.FOV_Default }):Play()
@@ -796,7 +833,7 @@ local function setupMovementSystem(char)
                 -- Play Random Walk
                 local rnd = Settings.WalkAnimsList[math.random(1, #Settings.WalkAnimsList)]
                 playAnim(rnd, 1, Enum.AnimationPriority.Action2)
-                
+
                 -- Reset FOV (Walking usually doesn't need huge FOV)
                 pcall(function()
                     TweenService:Create(workspace.CurrentCamera, TweenInfo.new(Settings.FOV_TransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = Settings.FOV_Default }):Play()
@@ -805,7 +842,7 @@ local function setupMovementSystem(char)
             elseif newState == "Run" then
                 -- Play Run
                 playAnim(Settings.RunAnimId, Settings.CurrentRunAnimSpeed, Enum.AnimationPriority.Action3)
-                
+
                 -- Increase FOV
                 pcall(function()
                     TweenService:Create(workspace.CurrentCamera, TweenInfo.new(Settings.FOV_TransitionTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { FieldOfView = Settings.FOV_Run }):Play()
@@ -885,4 +922,3 @@ lp.CharacterAdded:Connect(function(character)
         end
         bindMoves()   
 end)
-
