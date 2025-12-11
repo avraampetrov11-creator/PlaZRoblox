@@ -53,7 +53,7 @@ local Settings = {
     -- Movement & Camera
     RunSpeed = 38,
     DefaultWalkSpeed = 25,
-    WalkThreshold = 18, -- Speed below this triggers walking anims
+    WalkThreshold = 24, -- Speed below this triggers walking anims
     FOV_Run = 115,
     FOV_Default = 80,
     FOV_TransitionTime = 0.5,
