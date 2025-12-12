@@ -36,7 +36,6 @@ local Settings = {
     -- New Random Idle Animations
     IdleAnimsList = {
         "137841251329955",
-        "112138009997034", 
         "103362214977039", 
         "113201609340793", 
         "104862750267967" 
@@ -475,7 +474,7 @@ local Moves = {
                 end
             end)
 
-            playAnimation("13499771836", 1, 5)
+            playAnimation("12829073883373", 1, 5)
             highlightAndFade(2.3, 1)
 
             -- MODIFIED: Playing the Custom Audio using getcustomasset
