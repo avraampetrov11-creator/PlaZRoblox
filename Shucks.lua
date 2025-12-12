@@ -36,13 +36,17 @@ local Settings = {
     -- New Random Idle Animations
     IdleAnimsList = {
         "137841251329955",
-        "112138009997034"
+        "112138009997034", 
+        "103362214977039", 
+        "113201609340793", 
+        "104862750267967" 
     },
 
     -- New Random Walk Animations
     WalkAnimsList = {
-        "89642715363301",
-        "131920426725963"
+        "89642715363301", 
+        "17269023470" 
+
     },
 
     -- Old definitions (kept for compatibility with some logic, but overridden by new system)
