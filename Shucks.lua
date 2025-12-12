@@ -474,7 +474,7 @@ local Moves = {
                 end
             end)
 
-            playAnimation("85025226664507", 0.85, 5)
+            playAnimation("85025226664507", 0.5, 5)
             highlightAndFade(2.3, 1)
 
             -- MODIFIED: Playing the Custom Audio using getcustomasset
