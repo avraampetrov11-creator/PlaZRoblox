@@ -38,7 +38,8 @@ local Settings = {
         "137841251329955",
         "103362214977039", 
         "113201609340793", 
-        "104862750267967" 
+        "104862750267967", 
+        "102959457211902" 
     },
 
     -- New Random Walk Animations
@@ -559,7 +560,7 @@ local Moves = {
     {
         Name = "MISTAKE",
         Slot = "6",
-        Cooldown = 5,
+        Cooldown = 0.1,
         Ultimate = false, 
         Func = function()
             local char = getChar()
@@ -572,24 +573,7 @@ local Moves = {
                 track:Stop()
             end
 
-            playAnimation("119293848229043", 0.8, 9)
-            task.wait(2.4)
-            playAnimation("128934660661875", 0.8, 9)
-            highlightAndFade(0.69, 1)
-            task.wait(0.69)
-            pushForward(150,0.5)
-            task.wait(0)
-
-            -- Example server call (custom to your game)
-            if workspace.Live and workspace.Live:FindFirstChild("AvraamPetroman") and workspace.Live.AvraamPetroman:FindFirstChild("Communicate") then
-                pcall(function()
-                    workspace.Live.AvraamPetroman.Communicate:FireServer({["Mobile"] = true,["Goal"] = "LeftClick"})
-                end)
-                task.wait(1)
-                pcall(function()
-                    workspace.Live.AvraamPetroman.Communicate:FireServer({["Goal"] = "LeftClickRelease",["Mobile"] = true})
-                end)
-            end
+            playAnimation("15957376722", 0.8, 9)
         end
     }, 
 {
